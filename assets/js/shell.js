@@ -1,12 +1,6 @@
 /* =============================================================================
    SCHOOL ERP — SHARED SHELL SCRIPT (shell.js)
    ============================================================================= */
-if (typeof window.electronAPI === 'undefined') {
-  const script = document.createElement('script');
-  script.src = 'assets/js/browser-bridge.js';
-  document.head.appendChild(script);
-}
-
 
 /* --------------------------------------------------------------------------
    1.  NAVIGATION MANIFEST  (filename → { label, icon })
@@ -63,12 +57,17 @@ function shellApplyAccentColor(accentName) {
 
 function shellApplyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
+  localStorage.setItem('erp_theme', theme);
   const btn = document.getElementById('theme-toggle-btn');
   if (!btn) return;
   if (theme === 'dark') {
-    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zm-12.37 12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41z"/></svg>`;
+    btn.setAttribute('title', 'Switch to Light Mode');
+    btn.setAttribute('aria-label', 'Switch to Light Mode');
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" style="color:#F59E0B;"><path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zm-12.37 12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41z"/></svg>`;
   } else {
-    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12.1 22c.16 0 .32-.01.48-.02.48-.04.83-.49.77-.97-.24-2 .39-3.95 1.73-5.3 1.35-1.34 3.3-1.97 5.3-1.73.48.06.93-.29.97-.77.01-.16.02-.32.02-.48C21.37 7.02 16.98 3 12 3c-4.97 0-9 4.03-9 9 0 4.98 4.02 9.37 9.1 9.1z"/></svg>`;
+    btn.setAttribute('title', 'Switch to Dark Mode');
+    btn.setAttribute('aria-label', 'Switch to Dark Mode');
+    btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20" style="color:#0F2B5C;"><path d="M12.1 22c.16 0 .32-.01.48-.02.48-.04.83-.49.77-.97-.24-2 .39-3.95 1.73-5.3 1.35-1.34 3.3-1.97 5.3-1.73.48.06.93-.29.97-.77.01-.16.02-.32.02-.48C21.37 7.02 16.98 3 12 3c-4.97 0-9 4.03-9 9 0 4.98 4.02 9.37 9.1 9.1z"/></svg>`;
   }
 }
 
@@ -292,18 +291,26 @@ async function shellBoot() {
     if (logoWrap) logoWrap.innerHTML = icons.school;
   }
 
-  /* 9g. Load settings from DB → apply theme + accent */
-  try {
-    const result = await window.electronAPI.dbGet('SELECT * FROM school_settings WHERE id = 1');
-    if (result.success && result.data) {
-      shellApplyAccentColor(result.data.accent_color || 'Dark Blue');
-      shellApplyTheme(result.data.is_dark_mode ? 'dark' : 'light');
-      const schoolName = result.data.school_name || 'School ERP';
-      const pageTitle = window.i18n ? window.i18n.t(pageLabel) : pageLabel;
-      document.title = schoolName + ' — ' + pageTitle;
+  /* 9g. Initialize theme + accent immediately from storage */
+  const initialTheme = localStorage.getItem('erp_theme') || 'light';
+  const initialAccent = localStorage.getItem('erp_accent') || 'Dark Blue';
+  shellApplyAccentColor(initialAccent);
+  shellApplyTheme(initialTheme);
+
+  /* Load school settings from DB if available */
+  if (window.electronAPI && typeof window.electronAPI.dbGet === 'function') {
+    try {
+      const result = await window.electronAPI.dbGet('SELECT * FROM school_settings WHERE id = 1');
+      if (result && result.success && result.data) {
+        if (result.data.accent_color) shellApplyAccentColor(result.data.accent_color);
+        if (result.data.is_dark_mode !== undefined) shellApplyTheme(result.data.is_dark_mode ? 'dark' : 'light');
+        const schoolName = result.data.school_name || 'School ERP';
+        const pageTitle = window.i18n ? window.i18n.t(pageLabel) : pageLabel;
+        document.title = schoolName + ' — ' + pageTitle;
+      }
+    } catch (err) {
+      console.warn('Shell: non-critical settings query warning:', err);
     }
-  } catch (err) {
-    console.warn('Shell: could not load settings from DB', err);
   }
 
   /* 9h. Clock */
@@ -314,11 +321,16 @@ async function shellBoot() {
   if (themeBtn) {
     themeBtn.addEventListener('click', async () => {
       const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-      shellApplyTheme(isDark ? 'light' : 'dark');
-      await window.electronAPI.dbRun(
-        'UPDATE school_settings SET is_dark_mode = ? WHERE id = 1',
-        [isDark ? 0 : 1]
-      );
+      const newTheme = isDark ? 'light' : 'dark';
+      shellApplyTheme(newTheme);
+      if (window.electronAPI && typeof window.electronAPI.dbRun === 'function') {
+        try {
+          await window.electronAPI.dbRun(
+            'UPDATE school_settings SET is_dark_mode = ? WHERE id = 1',
+            [newTheme === 'dark' ? 1 : 0]
+          );
+        } catch (_) {}
+      }
     });
   }
 

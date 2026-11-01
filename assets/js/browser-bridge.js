@@ -92,6 +92,39 @@
     return [];
   }
 
+  async function getSchoolNotices(schoolId) {
+    const k = `notices_${schoolId}`;
+    if (cache[k] && cache[k].length > 0) return cache[k];
+    const data = await cloudFetch(`notices?school_id=eq.${schoolId}&select=*&order=created_at.desc`);
+    if (data && Array.isArray(data)) {
+      cache[k] = data;
+      return data;
+    }
+    return [];
+  }
+
+  async function getSchoolTimetables(schoolId) {
+    const k = `timetables_${schoolId}`;
+    if (cache[k] && cache[k].length > 0) return cache[k];
+    const data = await cloudFetch(`timetables?school_id=eq.${schoolId}&select=*&order=period_number.asc`);
+    if (data && Array.isArray(data)) {
+      cache[k] = data;
+      return data;
+    }
+    return [];
+  }
+
+  async function getSchoolAttendance(schoolId) {
+    const k = `attendance_${schoolId}`;
+    if (cache[k] && cache[k].length > 0) return cache[k];
+    const data = await cloudFetch(`attendance?school_id=eq.${schoolId}&select=*&order=date.desc`);
+    if (data && Array.isArray(data)) {
+      cache[k] = data;
+      return data;
+    }
+    return [];
+  }
+
   window.electronAPI = {
     isDesktop: false,
 
@@ -251,8 +284,10 @@
           full_name: p.full_name,
           employee_id: 'TCH-' + String(p.id).substring(0, 5).toUpperCase(),
           qualification: p.designation || (p.role === 'school_admin' ? 'M.Ed / Principal' : 'B.Ed / M.Sc'),
-          department: p.designation || 'Academics',
+          department: p.designation || (p.role === 'school_admin' ? 'Administration' : 'Academics'),
           contact_number: p.phone || p.email || '—',
+          contact_phone: p.phone || p.email || '—',
+          contact: p.phone || p.email || '—',
           email: p.email || '—',
           gender: 'Faculty',
           joining_date: p.created_at ? p.created_at.substring(0, 10) : '2026-06-01',
@@ -406,8 +441,76 @@
         };
       }
 
-      // 11. Chart data for Fees & Trends
-      if (s.includes('amount_paid') || s.includes('payment_date')) {
+      // 11. Notices / Announcements (Communication)
+      if (s.includes('from notices')) {
+        const notices = await getSchoolNotices(schoolId);
+        const mapped = notices.map((n, idx) => ({
+          id: n.id || idx + 1,
+          title: n.title,
+          content: n.content,
+          target_audience: n.target_role || 'All',
+          created_at: n.created_at || new Date().toISOString(),
+          author_name: school.name + ' Administration',
+          category: n.category || 'General'
+        }));
+        return { success: true, data: mapped };
+      }
+
+      // 12. Timetables (Academics)
+      if (s.includes('from timetables')) {
+        const tt = await getSchoolTimetables(schoolId);
+        const mapped = tt.map((t, idx) => ({
+          id: t.id || idx + 1,
+          class_id: parseInt(t.class_name) || 10,
+          section_id: 1,
+          subject_name: t.subject,
+          teacher_name: t.teacher_name,
+          day_of_week: t.day_of_week,
+          period_number: t.period_number,
+          start_time: t.start_time,
+          end_time: t.end_time,
+          room_number: t.room_number || 'Room 101'
+        }));
+        return { success: true, data: mapped };
+      }
+
+      // 13. Student Attendance
+      if (s.includes('from student_attendance') || s.includes('from attendance')) {
+        const att = await getSchoolAttendance(schoolId);
+        const mapped = att.map((a, idx) => ({
+          id: a.id || idx + 1,
+          student_id: a.student_id,
+          date: a.date,
+          status: a.status === 'present' ? 'Present' : a.status === 'late' ? 'Late' : 'Absent',
+          remarks: a.remarks || 'Recorded via Cloud ERP'
+        }));
+        return { success: true, data: mapped };
+      }
+
+      // 14. Academic Calendar Events
+      if (s.includes('from calendar_events')) {
+        return {
+          success: true,
+          data: [
+            { id: 1, title: 'Term 1 Mid-Term Assessments', description: 'Institutional evaluation for Grades 1-10', event_date: '2026-11-10', event_type: 'Exam' },
+            { id: 2, title: 'Annual Science & Tech Fair', description: 'Robotics and STEM demonstrations by students', event_date: '2026-11-20', event_type: 'Event' },
+            { id: 3, title: 'Parent-Teacher Conference', description: 'Academic review and progress reports', event_date: '2026-11-28', event_type: 'Meeting' }
+          ]
+        };
+      }
+
+      // 15. Backup Logs
+      if (s.includes('from backup_logs')) {
+        return {
+          success: true,
+          data: [
+            { id: 1, filename: `${school.code}_cloud_sync_${new Date().toISOString().substring(0, 10)}.db`, backup_type: 'Cloud Snapshot', file_size: 348160, created_at: new Date().toISOString() }
+          ]
+        };
+      }
+
+      // 16. Chart data for Fees & Trends
+      if (s.includes('amount_paid') || s.includes('payment_date') || s.includes('fee_payments')) {
         const fees = await getSchoolFees(schoolId);
         const months = ['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
         const totalPerMonth = fees.length > 0 ? Math.round(fees.reduce((a, b) => a + (b.amount || 0), 0) / months.length) : 25000;

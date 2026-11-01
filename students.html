@@ -71,6 +71,7 @@
   </div>
 </div>
 
+<script src="assets/js/browser-bridge.js"></script>
 <script src="assets/js/icons.js"></script>
 <script src="assets/js/i18n.js"></script>
 <script src="assets/js/shell.js"></script>
@@ -125,8 +126,8 @@ function renderStudents(data) {
       <td>${r.parent_phone||'—'}</td>
       <td><span class="badge badge-${r.status==='Active'?'success':'warning'}">${r.status||'Active'}</span></td>
       <td>
-        <button class="icon-btn" title="Edit" onclick="editStudent(${r.id})"><span data-icon="edit"></span></button>
-        <button class="icon-btn" title="Delete" onclick="deleteStudent(${r.id})"><span data-icon="delete"></span></button>
+        <button class="icon-btn" title="Edit" onclick="editStudent('${r.id}')"><span data-icon="edit"></span></button>
+        <button class="icon-btn" title="Delete" onclick="deleteStudent('${r.id}')"><span data-icon="delete"></span></button>
       </td>
     </tr>`).join('');
   document.querySelectorAll('[data-icon]').forEach(el => { const n=el.getAttribute('data-icon'); if(icons[n]) el.innerHTML=icons[n]; });
