@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academics &amp; Timetable — School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="app-container">
+  <aside class="sidebar" id="sidebar-container"></aside>
+  <main class="main-layout">
+    <header class="header" id="header-container"></header>
+    <div class="content-viewport">
+      <div style="display:grid; grid-template-columns:280px 1fr; gap:24px;">
+
+        <!-- Left column: Manage core -->
+        <div>
+          <div class="content-card" style="margin-bottom:20px;">
+            <div class="card-header"><h4 class="card-title">Setup Core</h4></div>
+            <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+              <button class="btn btn-secondary" style="width:100%;justify-content:flex-start;" id="btn-manage-classes">Manage Classes</button>
+              <button class="btn btn-secondary" style="width:100%;justify-content:flex-start;" id="btn-manage-sections">Manage Sections</button>
+              <button class="btn btn-secondary" style="width:100%;justify-content:flex-start;" id="btn-manage-subjects">Manage Subjects</button>
+            </div>
+          </div>
+
+          <!-- Classes list -->
+          <div class="content-card">
+            <div class="card-header"><h4 class="card-title">Classes</h4></div>
+            <div class="card-body" style="padding:8px;">
+              <ul id="classes-list" style="list-style:none;display:flex;flex-direction:column;gap:6px;"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right column: Timetable -->
+        <div>
+          <div class="content-card">
+            <div class="card-header">
+              <h3 class="card-title">Weekly Timetable Schedule</h3>
+              <button class="btn btn-primary" id="btn-add-timetable-row"><span data-icon="plus"></span> Add Entry</button>
+            </div>
+            <div class="card-body">
+              <div class="search-filter-bar">
+                <div class="filter-group">
+                  <select id="timetable-filter-class" class="form-control" style="width:140px;"></select>
+                  <select id="timetable-filter-section" class="form-control" style="width:140px;"></select>
+                  <button class="btn btn-secondary btn-sm" id="btn-load-timetable">Load</button>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="table" id="timetable-table">
+                  <thead><tr><th>Day</th><th>Time Block</th><th>Subject</th><th>Instructor</th><th>Action</th></tr></thead>
+                  <tbody><tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Select Class &amp; Section to view schedule.</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-content" id="app-modal-content">
+    <div class="modal-header"><h3 class="modal-title" id="app-modal-title">Academics</h3><button class="modal-close" id="app-modal-close-btn"></button></div>
+    <div class="modal-body" id="app-modal-body"></div>
+    <div class="modal-footer" id="app-modal-footer"><button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="app-modal-submit">Save</button></div>
+  </div>
+</div>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+let allClasses=[], allSections=[], allSubjects=[], allTeachers=[];
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadMeta();
+  populateFilters();
+  renderClassesList();
+  document.getElementById('btn-manage-classes').addEventListener('click', () => openListManager('classes','class_name','Classes'));
+  document.getElementById('btn-manage-sections').addEventListener('click', () => openListManager('sections','section_name','Sections'));
+  document.getElementById('btn-manage-subjects').addEventListener('click', () => openListManager('subjects','subject_name','Subjects'));
+  document.getElementById('btn-load-timetable').addEventListener('click', loadTimetable);
+  document.getElementById('btn-add-timetable-row').addEventListener('click', () => openTimetableModal(null));
+});
+
+async function loadMeta() {
+  const [c,s,sub,t] = await Promise.all([
+    window.electronAPI.dbAll('SELECT * FROM classes ORDER BY class_name'),
+    window.electronAPI.dbAll('SELECT * FROM sections ORDER BY section_name'),
+    window.electronAPI.dbAll('SELECT * FROM subjects ORDER BY subject_name'),
+    window.electronAPI.dbAll('SELECT * FROM teachers WHERE status="Active" ORDER BY full_name')
+  ]);
+  allClasses  = c.success   ? c.data   : [];
+  allSections = s.success   ? s.data   : [];
+  allSubjects = sub.success ? sub.data : [];
+  allTeachers = t.success   ? t.data   : [];
+}
+
+function populateFilters() {
+  const cSel = document.getElementById('timetable-filter-class');
+  const sSel = document.getElementById('timetable-filter-section');
+  cSel.innerHTML = '<option value="">-- Class --</option>' + allClasses.map(c=>`<option value="${c.id}">${c.class_name}</option>`).join('');
+  sSel.innerHTML = '<option value="">-- Section --</option>' + allSections.map(s=>`<option value="${s.id}">${s.section_name}</option>`).join('');
+}
+
+function renderClassesList() {
+  const ul = document.getElementById('classes-list');
+  ul.innerHTML = allClasses.map(c => `<li style="padding:8px 12px;background:var(--bg-tertiary);border-radius:var(--radius-sm);font-size:0.9rem;">${c.class_name}</li>`).join('') || '<li style="color:var(--text-secondary);font-size:0.85rem;padding:8px;">No classes yet.</li>';
+}
+
+async function loadTimetable() {
+  const classId = document.getElementById('timetable-filter-class').value;
+  const sectId  = document.getElementById('timetable-filter-section').value;
+  if (!classId) { showToast('Select a class.','danger'); return; }
+  const res = await window.electronAPI.dbAll(
+    `SELECT t.*, sub.subject_name, tea.full_name AS teacher_name FROM timetables t
+     LEFT JOIN subjects sub ON t.subject_id=sub.id
+     LEFT JOIN teachers tea ON t.teacher_id=tea.id
+     WHERE t.class_id=? ${sectId?'AND t.section_id=?':''} ORDER BY t.day_of_week, t.start_time`, sectId?[classId,sectId]:[classId]
+  );
+  const data = (res.success && res.data) ? res.data : [];
+  const tbody = document.querySelector('#timetable-table tbody');
+  if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">No timetable entries found.</td></tr>'; return; }
+  tbody.innerHTML = data.map(r=>`<tr>
+    <td>${r.day_of_week}</td><td>${r.start_time}–${r.end_time}</td>
+    <td>${r.subject_name||'—'}</td><td>${r.teacher_name||'—'}</td>
+    <td><button class="icon-btn" onclick="deleteTimetable(${r.id})"><span data-icon="delete"></span></button></td>
+  </tr>`).join('');
+  document.querySelectorAll('[data-icon]').forEach(el=>{const n=el.getAttribute('data-icon');if(icons[n])el.innerHTML=icons[n];});
+}
+
+function openTimetableModal(existing) {
+  const modal = document.getElementById('app-modal');
+  const classId = document.getElementById('timetable-filter-class').value;
+  document.getElementById('app-modal-title').textContent = 'Add Timetable Entry';
+  document.getElementById('app-modal-body').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Day *</label>
+        <select id="mf-day" class="form-control"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option></select></div>
+      <div class="form-group"><label class="form-label">Start Time</label><input type="time" id="mf-start" class="form-control" value="08:00"></div>
+      <div class="form-group"><label class="form-label">End Time</label><input type="time" id="mf-end" class="form-control" value="09:00"></div>
+      <div class="form-group"><label class="form-label">Subject</label>
+        <select id="mf-sub" class="form-control"><option value="">— Select —</option>${allSubjects.map(s=>`<option value="${s.id}">${s.subject_name}</option>`).join('')}</select></div>
+      <div class="form-group"><label class="form-label">Teacher</label>
+        <select id="mf-tea" class="form-control"><option value="">— Select —</option>${allTeachers.map(t=>`<option value="${t.id}">${t.full_name}</option>`).join('')}</select></div>
+    </div>`;
+  document.getElementById('app-modal-footer').innerHTML = `<button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="_tt-save">Add Entry</button>`;
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick = () => modal.classList.remove('active');
+  document.getElementById('app-modal-close-btn').onclick = () => modal.classList.remove('active');
+  document.getElementById('_tt-save').onclick = async () => {
+    const sectId = document.getElementById('timetable-filter-section').value;
+    await window.electronAPI.dbRun('INSERT INTO timetables(class_id,section_id,day_of_week,start_time,end_time,subject_id,teacher_id) VALUES(?,?,?,?,?,?,?)',
+      [classId||null,sectId||null,document.getElementById('mf-day').value,document.getElementById('mf-start').value,document.getElementById('mf-end').value,document.getElementById('mf-sub').value||null,document.getElementById('mf-tea').value||null]);
+    showToast('Timetable entry added.','success');
+    modal.classList.remove('active');
+    loadTimetable();
+  };
+}
+
+function deleteTimetable(id) {
+  showConfirmDialog('Delete this timetable entry?', async () => {
+    await window.electronAPI.dbRun('DELETE FROM timetables WHERE id=?',[id]);
+    showToast('Entry deleted.','info');
+    loadTimetable();
+  });
+}
+
+async function openListManager(table, nameField, label) {
+  const modal = document.getElementById('app-modal');
+  document.getElementById('app-modal-title').textContent = 'Manage ' + label;
+  const res = await window.electronAPI.dbAll(`SELECT * FROM ${table} ORDER BY ${nameField}`);
+  const items = (res.success && res.data) ? res.data : [];
+  document.getElementById('app-modal-body').innerHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:16px;">
+      <input id="_lm-input" class="form-control" placeholder="New ${label.slice(0,-1)} name…">
+      <button class="btn btn-primary" id="_lm-add">Add</button>
+    </div>
+    <ul id="_lm-list" style="list-style:none;display:flex;flex-direction:column;gap:6px;">
+      ${items.map(i=>`<li style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-tertiary);border-radius:var(--radius-sm);">
+        <span>${i[nameField]}</span>
+        <button class="icon-btn" style="width:30px;height:30px;" onclick="deleteListItem('${table}',${i.id})"><span data-icon="delete"></span></button>
+      </li>`).join('') || '<li style="color:var(--text-secondary);font-size:0.85rem;">No entries yet.</li>'}
+    </ul>`;
+  document.getElementById('app-modal-footer').innerHTML = `<button class="btn btn-secondary" id="app-modal-cancel">Close</button>`;
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick = () => { modal.classList.remove('active'); loadMeta().then(()=>{populateFilters();renderClassesList();}); };
+  document.getElementById('app-modal-close-btn').onclick = () => { modal.classList.remove('active'); loadMeta().then(()=>{populateFilters();renderClassesList();}); };
+  document.querySelectorAll('[data-icon]').forEach(el=>{const n=el.getAttribute('data-icon');if(icons[n])el.innerHTML=icons[n];});
+  document.getElementById('_lm-add').onclick = async () => {
+    const val = document.getElementById('_lm-input').value.trim();
+    if (!val) return;
+  if (table === 'sections') {
+      // sections require a class_id; grab from filter or use 1 as default
+      const classId = document.getElementById('timetable-filter-class').value || 1;
+      await window.electronAPI.dbRun(`INSERT INTO sections(class_id,section_name) VALUES(?,?)`, [classId, val]);
+    } else if (table === 'subjects') {
+      const code = 'SUB-' + Date.now().toString().slice(-6);
+      await window.electronAPI.dbRun(`INSERT INTO subjects(subject_name,subject_code) VALUES(?,?)`, [val, code]);
+    } else {
+      await window.electronAPI.dbRun(`INSERT INTO ${table}(${nameField}) VALUES(?)`, [val]);
+    }
+    showToast(`${label.slice(0,-1)} added.`,'success');
+    openListManager(table, nameField, label);
+  };
+}
+
+async function deleteListItem(table, id) {
+  await window.electronAPI.dbRun(`DELETE FROM ${table} WHERE id=?`,[id]);
+  showToast('Deleted.','info');
+}
+</script>
+</body>
+</html>

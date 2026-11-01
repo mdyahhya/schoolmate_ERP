@@ -1,0 +1,45 @@
+{
+  "name": "school-erp",
+  "version": "1.0.0",
+  "description": "Offline Commercial School ERP Desktop Application",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "serve": "node server.js",
+    "live": "node server.js",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "keywords": [],
+  "author": "School ERP Team",
+  "license": "ISC",
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "pg": "^8.23.1",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "electron": "^30.5.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.schoolerp.app",
+    "productName": "SchoolERP",
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    }
+  }
+}

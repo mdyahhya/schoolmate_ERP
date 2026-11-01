@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hostel System — School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="app-container">
+  <aside class="sidebar" id="sidebar-container"></aside>
+  <main class="main-layout">
+    <header class="header" id="header-container"></header>
+    <div class="content-viewport">
+      <div style="display:grid; grid-template-columns:280px 1fr; gap:24px;">
+
+        <!-- Hostel list -->
+        <div>
+          <div class="content-card">
+            <div class="card-header">
+              <h4 class="card-title">Hostels</h4>
+              <button class="icon-btn" id="btn-add-hostel"><span data-icon="plus"></span></button>
+            </div>
+            <div class="card-body" style="padding:12px;">
+              <ul id="hostel-list" style="list-style:none;display:flex;flex-direction:column;gap:8px;"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right -->
+        <div>
+          <!-- Rooms -->
+          <div class="content-card" style="margin-bottom:24px;">
+            <div class="card-header">
+              <h3 class="card-title">Room Allocations</h3>
+              <button class="btn btn-primary" id="btn-allocate-room"><span data-icon="plus"></span> Add Room</button>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table" id="hostel-rooms-table">
+                  <thead><tr><th>Room No.</th><th>Style</th><th>Capacity</th><th>Hostel</th><th>Actions</th></tr></thead>
+                  <tbody><tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Loading…</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- Visitors -->
+          <div class="content-card">
+            <div class="card-header">
+              <h3 class="card-title">Visitor Security Register</h3>
+              <button class="btn btn-primary" id="btn-add-visitor"><span data-icon="plus"></span> Log Visitor</button>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive">
+                <table class="table" id="visitor-table">
+                  <thead><tr><th>Date</th><th>Visitor Name</th><th>Contact</th><th>Purpose</th><th>Host</th><th>In</th><th>Out</th><th>Actions</th></tr></thead>
+                  <tbody><tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">Loading…</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-content" id="app-modal-content">
+    <div class="modal-header"><h3 class="modal-title" id="app-modal-title">Hostel</h3><button class="modal-close" id="app-modal-close-btn"></button></div>
+    <div class="modal-body" id="app-modal-body"></div>
+    <div class="modal-footer" id="app-modal-footer"><button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="app-modal-submit">Save</button></div>
+  </div>
+</div>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+let allHostels=[], allRooms=[], allVisitors=[];
+document.addEventListener('DOMContentLoaded', () => {
+  loadAll();
+  document.getElementById('btn-add-hostel').addEventListener('click', () => openHostelModal(null));
+  document.getElementById('btn-allocate-room').addEventListener('click', () => openRoomModal(null));
+  document.getElementById('btn-add-visitor').addEventListener('click', () => openVisitorModal(null));
+});
+async function loadAll() {
+  const [hRes, rRes, vRes] = await Promise.all([
+    window.electronAPI.dbAll('SELECT * FROM hostels ORDER BY hostel_name'),
+    window.electronAPI.dbAll('SELECT r.*, h.hostel_name FROM hostel_rooms r LEFT JOIN hostels h ON r.hostel_id=h.id ORDER BY r.room_number'),
+    window.electronAPI.dbAll('SELECT * FROM hostel_visitors ORDER BY visit_date DESC LIMIT 50')
+  ]);
+  allHostels  = hRes.success ? hRes.data : [];
+  allRooms    = rRes.success ? rRes.data : [];
+  allVisitors = vRes.success ? vRes.data : [];
+  renderHostelList(); renderRooms(); renderVisitors();
+}
+function renderHostelList() {
+  const ul = document.getElementById('hostel-list');
+  ul.innerHTML = allHostels.map(h=>`<li style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--bg-tertiary);border-radius:var(--radius-sm);">
+    <span><strong>${h.hostel_name}</strong><br><small style="color:var(--text-secondary);">${h.hostel_type||''}</small></span>
+    <button class="icon-btn" style="width:28px;height:28px;" onclick="deleteHostel(${h.id})"><span data-icon="delete"></span></button>
+  </li>`).join('') || '<li style="color:var(--text-secondary);font-size:0.85rem;padding:8px;">No hostels configured.</li>';
+  document.querySelectorAll('[data-icon]').forEach(el=>{const n=el.getAttribute('data-icon');if(icons[n])el.innerHTML=icons[n];});
+}
+function renderRooms() {
+  const tbody = document.querySelector('#hostel-rooms-table tbody');
+  if (!allRooms.length) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">No rooms configured.</td></tr>'; return; }
+  tbody.innerHTML = allRooms.map(r=>`<tr>
+    <td>${r.room_number}</td><td>${r.room_type||'—'}</td><td>${r.capacity||'—'}</td><td>${r.hostel_name||'—'}</td>
+    <td><button class="icon-btn" onclick="deleteRoom(${r.id})"><span data-icon="delete"></span></button></td></tr>`).join('');
+  document.querySelectorAll('[data-icon]').forEach(el=>{const n=el.getAttribute('data-icon');if(icons[n])el.innerHTML=icons[n];});
+}
+function renderVisitors() {
+  const tbody = document.querySelector('#visitor-table tbody');
+  if (!allVisitors.length) { tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">No visitor logs.</td></tr>'; return; }
+  tbody.innerHTML = allVisitors.map(v=>`<tr>
+    <td>${v.visit_date||'—'}</td><td>${v.visitor_name}</td><td>${v.contact_phone||'—'}</td>
+    <td>${v.purpose||'—'}</td><td>${v.host_name||'—'}</td>
+    <td>${v.check_in_time||'—'}</td><td>${v.check_out_time||'—'}</td>
+    <td><button class="icon-btn" onclick="deleteVisitor(${v.id})"><span data-icon="delete"></span></button></td></tr>`).join('');
+  document.querySelectorAll('[data-icon]').forEach(el=>{const n=el.getAttribute('data-icon');if(icons[n])el.innerHTML=icons[n];});
+}
+function openHostelModal(existing) {
+  const modal=document.getElementById('app-modal');
+  document.getElementById('app-modal-title').textContent = 'Add Hostel Block';
+  document.getElementById('app-modal-body').innerHTML = `
+    <div class="form-group"><label class="form-label">Hostel Name *</label><input id="mf-hname" class="form-control" value="${existing?.hostel_name||''}"></div>
+    <div class="form-group" style="margin-top:12px;"><label class="form-label">Type</label>
+      <select id="mf-htype" class="form-control"><option>Boys</option><option>Girls</option><option>Mixed</option></select></div>`;
+  document.getElementById('app-modal-footer').innerHTML=`<button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="_hs-save">Save</button>`;
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick=()=>modal.classList.remove('active');
+  document.getElementById('app-modal-close-btn').onclick=()=>modal.classList.remove('active');
+  document.getElementById('_hs-save').onclick=async()=>{
+    const n=document.getElementById('mf-hname').value.trim(); if(!n){showToast('Name required.','danger');return;}
+    await window.electronAPI.dbRun('INSERT INTO hostels(hostel_name,hostel_type) VALUES(?,?)',[n,document.getElementById('mf-htype').value]);
+    showToast('Hostel added.','success'); modal.classList.remove('active'); loadAll();
+  };
+}
+function openRoomModal(existing) {
+  const modal=document.getElementById('app-modal');
+  document.getElementById('app-modal-title').textContent = 'Add Room';
+  document.getElementById('app-modal-body').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Room Number *</label><input id="mf-rnum" class="form-control" value="${existing?.room_number||''}"></div>
+      <div class="form-group"><label class="form-label">Room Type</label>
+        <select id="mf-rtype" class="form-control"><option>Single</option><option>Double</option><option>Dormitory</option></select></div>
+      <div class="form-group"><label class="form-label">Capacity</label><input type="number" id="mf-rcap" class="form-control" min="1" value="${existing?.capacity||''}"></div>
+      <div class="form-group"><label class="form-label">Hostel Block</label>
+        <select id="mf-rhostel" class="form-control"><option value="">— None —</option>${allHostels.map(h=>`<option value="${h.id}" ${String(existing?.hostel_id)===String(h.id)?'selected':''}>${h.hostel_name}</option>`).join('')}</select></div>
+    </div>`;
+  document.getElementById('app-modal-footer').innerHTML=`<button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="_rm-save">Save</button>`;
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick=()=>modal.classList.remove('active');
+  document.getElementById('app-modal-close-btn').onclick=()=>modal.classList.remove('active');
+  document.getElementById('_rm-save').onclick=async()=>{
+    const n=document.getElementById('mf-rnum').value.trim(); if(!n){showToast('Room number required.','danger');return;}
+    await window.electronAPI.dbRun('INSERT INTO hostel_rooms(room_number,room_type,capacity,hostel_id) VALUES(?,?,?,?)',
+      [n,document.getElementById('mf-rtype').value,document.getElementById('mf-rcap').value||null,document.getElementById('mf-rhostel').value||null]);
+    showToast('Room added.','success'); modal.classList.remove('active'); loadAll();
+  };
+}
+function openVisitorModal(existing) {
+  const modal=document.getElementById('app-modal');
+  document.getElementById('app-modal-title').textContent = 'Log Visitor Entry';
+  document.getElementById('app-modal-body').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Visitor Name *</label><input id="mf-vname" class="form-control" value="${existing?.visitor_name||''}"></div>
+      <div class="form-group"><label class="form-label">Contact Phone</label><input id="mf-vphone" class="form-control" value="${existing?.contact_phone||''}"></div>
+      <div class="form-group"><label class="form-label">Purpose</label><input id="mf-vpurpose" class="form-control" value="${existing?.purpose||''}"></div>
+      <div class="form-group"><label class="form-label">Host Name</label><input id="mf-vhost" class="form-control" value="${existing?.host_name||''}"></div>
+      <div class="form-group"><label class="form-label">Visit Date</label><input type="date" id="mf-vdate" class="form-control" value="${existing?.visit_date||new Date().toISOString().substring(0,10)}"></div>
+      <div class="form-group"><label class="form-label">Check-In Time</label><input type="time" id="mf-vcheckin" class="form-control" value="${existing?.check_in_time||''}"></div>
+    </div>`;
+  document.getElementById('app-modal-footer').innerHTML=`<button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="_vs-save">Log Visitor</button>`;
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick=()=>modal.classList.remove('active');
+  document.getElementById('app-modal-close-btn').onclick=()=>modal.classList.remove('active');
+  document.getElementById('_vs-save').onclick=async()=>{
+    const n=document.getElementById('mf-vname').value.trim(); if(!n){showToast('Visitor name required.','danger');return;}
+    await window.electronAPI.dbRun('INSERT INTO hostel_visitors(visitor_name,contact_phone,purpose,host_name,visit_date,check_in_time) VALUES(?,?,?,?,?,?)',
+      [n,document.getElementById('mf-vphone').value,document.getElementById('mf-vpurpose').value,document.getElementById('mf-vhost').value,document.getElementById('mf-vdate').value,document.getElementById('mf-vcheckin').value]);
+    showToast('Visitor logged.','success'); modal.classList.remove('active'); loadAll();
+  };
+}
+function deleteHostel(id){showConfirmDialog('Delete hostel?',async()=>{await window.electronAPI.dbRun('DELETE FROM hostels WHERE id=?',[id]);showToast('Deleted.','info');loadAll();});}
+function deleteRoom(id){showConfirmDialog('Delete room?',async()=>{await window.electronAPI.dbRun('DELETE FROM hostel_rooms WHERE id=?',[id]);showToast('Deleted.','info');loadAll();});}
+function deleteVisitor(id){showConfirmDialog('Delete visitor log?',async()=>{await window.electronAPI.dbRun('DELETE FROM hostel_visitors WHERE id=?',[id]);showToast('Deleted.','info');loadAll();});}
+</script>
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Transport Log — School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="app-container">
+  <aside class="sidebar" id="sidebar-container"></aside>
+  <main class="main-layout">
+    <header class="header" id="header-container"></header>
+    <div class="content-viewport">
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+
+        <!-- Vehicles -->
+        <div class="content-card">
+          <div class="card-header">
+            <h3 class="card-title">Vehicles &amp; Drivers Log</h3>
+            <button class="btn btn-primary btn-sm" id="btn-add-vehicle"><span data-icon="plus"></span> Add Vehicle</button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table" id="transport-vehicles-table">
+                <thead><tr><th>Reg No.</th><th>Model</th><th>Capacity</th><th>Driver</th><th>Actions</th></tr></thead>
+                <tbody><tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Loading…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Routes -->
+        <div class="content-card">
+          <div class="card-header">
+            <h3 class="card-title">Route Mappings</h3>
+            <button class="btn btn-primary btn-sm" id="btn-add-route"><span data-icon="plus"></span> Create Route</button>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table" id="transport-routes-table">
+                <thead><tr><th>Route Name</th><th>Origin / Destination</th><th>Vehicle</th><th>Actions</th></tr></thead>
+                <tbody><tr><td colspan="4" style="text-align:center;color:var(--text-secondary);">Loading…</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-content" id="app-modal-content">
+    <div class="modal-header"><h3 class="modal-title" id="app-modal-title">Transport</h3><button class="modal-close" id="app-modal-close-btn"></button></div>
+    <div class="modal-body" id="app-modal-body"></div>
+    <div class="modal-footer" id="app-modal-footer"><button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="app-modal-submit">Save</button></div>
+  </div>
+</div>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+let allVehicles=[], allRoutes=[];
+document.addEventListener('DOMContentLoaded', () => {
+  loadAll();
+  document.getElementById('btn-add-vehicle').addEventListener('click', () => openVehicleModal(null));
+  document.getElementById('btn-add-route').addEventListener('click', () => openRouteModal(null));
+});
+async function loadAll() {
+  const [vRes, rRes] = await Promise.all([
+    window.electronAPI.dbAll('SELECT * FROM vehicles_mpa ORDER BY registration_no'),
+    window.electronAPI.dbAll('SELECT r.*, v.registration_no FROM routes_mpa r LEFT JOIN vehicles_mpa v ON r.vehicle_id=v.id ORDER BY r.route_name')
+  ]);
+  allVehicles = vRes.success ? vRes.data : [];
+  allRoutes   = rRes.success ? rRes.data : [];
+  renderVehicles(); renderRoutes();
+}
+function renderVehicles() {
+  const tbody = document.querySelector('#transport-vehicles-table tbody');
+  if (!allVehicles.length) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">No vehicles configured.</td></tr>'; return; }
+  tbody.innerHTML = allVehicles.map(v=>`<tr>
+    <td>${v.registration_no}</td><td>${v.model||'—'}</td><td>${v.capacity||'—'}</td>
+    <td>${v.driver_name||'—'}</td>
+    <td>
+      <button class="icon-btn" onclick="editVehicle(${v.id})"><span data-icon="edit"></span></button>
+      <button class="icon-btn" onclick="deleteVehicle(${v.id})"><span data-icon="delete"></span></button>
+    </td></tr>`).join('');
+  document.querySelectorAll('[data-icon]').forEach(el=>{const n=el.getAttribute('data-icon');if(icons[n])el.innerHTML=icons[n];});
+}
+function renderRoutes() {
+  const tbody = document.querySelector('#transport-routes-table tbody');
+  if (!allRoutes.length) { tbody.innerHTML='<tr><td colspan="4" style="text-align:center;color:var(--text-secondary);">No routes created.</td></tr>'; return; }
+  tbody.innerHTML = allRoutes.map(r=>`<tr>
+    <td>${r.route_name}</td><td>${r.origin||'—'} → ${r.destination||'—'}</td>
+    <td>${r.registration_no||'—'}</td>
+    <td>
+      <button class="icon-btn" onclick="editRoute(${r.id})"><span data-icon="edit"></span></button>
+      <button class="icon-btn" onclick="deleteRoute(${r.id})"><span data-icon="delete"></span></button>
+    </td></tr>`).join('');
+  document.querySelectorAll('[data-icon]').forEach(el=>{const n=el.getAttribute('data-icon');if(icons[n])el.innerHTML=icons[n];});
+}
+function openVehicleModal(existing) {
+  const modal = document.getElementById('app-modal');
+  document.getElementById('app-modal-title').textContent = existing ? 'Edit Vehicle' : 'Add Vehicle';
+  document.getElementById('app-modal-body').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Registration No. *</label><input id="mf-reg" class="form-control" value="${existing?.registration_no||''}"></div>
+      <div class="form-group"><label class="form-label">Model / Type</label><input id="mf-model" class="form-control" value="${existing?.model||''}"></div>
+      <div class="form-group"><label class="form-label">Seating Capacity</label><input type="number" id="mf-cap" class="form-control" value="${existing?.capacity||''}"></div>
+      <div class="form-group"><label class="form-label">Driver Name</label><input id="mf-driver" class="form-control" value="${existing?.driver_name||''}"></div>
+      <div class="form-group"><label class="form-label">Driver Contact</label><input id="mf-dphone" class="form-control" value="${existing?.driver_phone||''}"></div>
+    </div>`;
+  document.getElementById('app-modal-footer').innerHTML = `<button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="_vh-save">Save</button>`;
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick = () => modal.classList.remove('active');
+  document.getElementById('app-modal-close-btn').onclick = () => modal.classList.remove('active');
+  document.getElementById('_vh-save').onclick = async () => {
+    const reg = document.getElementById('mf-reg').value.trim();
+    if (!reg) { showToast('Registration no. required.','danger'); return; }
+    const p=[reg, document.getElementById('mf-model').value.trim(), document.getElementById('mf-cap').value||null, document.getElementById('mf-driver').value.trim(), document.getElementById('mf-dphone').value.trim()];
+    if (existing) await window.electronAPI.dbRun('UPDATE vehicles SET registration_number=?,vehicle_model=?,capacity=?,driver_name=?,driver_phone=? WHERE id='+existing.id, p);
+    else await window.electronAPI.dbRun('INSERT INTO vehicles(registration_number,vehicle_model,capacity,driver_name,driver_phone) VALUES(?,?,?,?,?)', p);
+    showToast('Vehicle saved.','success'); modal.classList.remove('active'); loadAll();
+  };
+}
+async function editVehicle(id) { const res=await window.electronAPI.dbGet('SELECT * FROM vehicles_mpa WHERE id=?',[id]); if(res.success&&res.data) openVehicleModal(res.data); }
+function deleteVehicle(id) { showConfirmDialog('Delete this vehicle?',async()=>{ await window.electronAPI.dbRun('DELETE FROM vehicles WHERE id=?',[id]); showToast('Deleted.','info'); loadAll(); }); }
+
+function openRouteModal(existing) {
+  const modal = document.getElementById('app-modal');
+  document.getElementById('app-modal-title').textContent = existing ? 'Edit Route' : 'Create Route';
+  document.getElementById('app-modal-body').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Route Name *</label><input id="mf-rname" class="form-control" value="${existing?.route_name||''}"></div>
+      <div class="form-group"><label class="form-label">Origin / Start Point</label><input id="mf-origin" class="form-control" value="${existing?.origin||''}"></div>
+      <div class="form-group"><label class="form-label">Destination / End Point</label><input id="mf-dest" class="form-control" value="${existing?.destination||''}"></div>
+      <div class="form-group"><label class="form-label">Assigned Vehicle</label>
+        <select id="mf-veh" class="form-control"><option value="">— None —</option>${allVehicles.map(v=>`<option value="${v.id}" ${String(existing?.vehicle_id)===String(v.id)?'selected':''}>${v.registration_no} (${v.model||''})</option>`).join('')}</select></div>
+    </div>`;
+  document.getElementById('app-modal-footer').innerHTML = `<button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="_rt-save">Save</button>`;
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick = () => modal.classList.remove('active');
+  document.getElementById('app-modal-close-btn').onclick = () => modal.classList.remove('active');
+  document.getElementById('_rt-save').onclick = async () => {
+    const rname = document.getElementById('mf-rname').value.trim();
+    if (!rname) { showToast('Route name required.','danger'); return; }
+    const p=[rname, document.getElementById('mf-origin').value.trim(), document.getElementById('mf-dest').value.trim(), document.getElementById('mf-veh').value||null];
+    if (existing) await window.electronAPI.dbRun('UPDATE routes SET route_name=?,start_point=?,end_point=?,vehicle_id=? WHERE id='+existing.id, p);
+    else await window.electronAPI.dbRun('INSERT INTO routes(route_name,start_point,end_point,vehicle_id) VALUES(?,?,?,?)', p);
+    showToast('Route saved.','success'); modal.classList.remove('active'); loadAll();
+  };
+}
+async function editRoute(id) { const res=await window.electronAPI.dbGet('SELECT * FROM routes_mpa WHERE id=?',[id]); if(res.success&&res.data) openRouteModal(res.data); }
+function deleteRoute(id) { showConfirmDialog('Delete this route?',async()=>{ await window.electronAPI.dbRun('DELETE FROM routes WHERE id=?',[id]); showToast('Deleted.','info'); loadAll(); }); }
+</script>
+</body>
+</html>

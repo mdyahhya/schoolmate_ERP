@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Calendar — School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .calendar-header-row { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; margin-bottom:4px; }
+    .calendar-header-row span { text-align:center; font-size:0.8rem; font-weight:600; color:var(--text-secondary); padding:8px 0; }
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+    .cal-day { min-height:90px; background:var(--bg-tertiary); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding:8px; position:relative; cursor:pointer; transition:all .15s; }
+    .cal-day:hover { border-color:var(--accent-color); }
+    .cal-day.other-month { opacity:0.4; }
+    .cal-day.today { border-color:var(--accent-color); border-width:2px; }
+    .cal-day-num { font-size:0.8rem; font-weight:600; color:var(--text-primary); }
+    .cal-event { font-size:0.72rem; background:var(--accent-color); color:#fff; border-radius:3px; padding:2px 5px; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <aside class="sidebar" id="sidebar-container"></aside>
+  <main class="main-layout">
+    <header class="header" id="header-container"></header>
+    <div class="content-viewport">
+      <div class="content-card">
+        <div class="card-header">
+          <div style="display:flex;align-items:center;gap:16px;">
+            <button class="btn btn-secondary btn-sm" id="btn-prev-month">&#8249; Prev</button>
+            <h3 class="card-title" id="calendar-month-year" style="margin:0;">Academic Calendar</h3>
+            <button class="btn btn-secondary btn-sm" id="btn-next-month">Next &#8250;</button>
+          </div>
+          <button class="btn btn-primary" id="btn-add-calendar-event"><span data-icon="plus"></span> Add Event</button>
+        </div>
+        <div class="card-body">
+          <div class="calendar-header-row">
+            <span>Sun</span><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span>
+          </div>
+          <div class="cal-grid" id="calendar-grid-body"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-content" id="app-modal-content">
+    <div class="modal-header"><h3 class="modal-title" id="app-modal-title">Calendar Event</h3><button class="modal-close" id="app-modal-close-btn"></button></div>
+    <div class="modal-body" id="app-modal-body"></div>
+    <div class="modal-footer" id="app-modal-footer"><button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="app-modal-submit">Save</button></div>
+  </div>
+</div>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+let currentMonth = new Date();
+let allEvents = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadEvents();
+  renderCalendar();
+  document.getElementById('btn-prev-month').addEventListener('click', () => { currentMonth.setMonth(currentMonth.getMonth()-1); renderCalendar(); });
+  document.getElementById('btn-next-month').addEventListener('click', () => { currentMonth.setMonth(currentMonth.getMonth()+1); renderCalendar(); });
+  document.getElementById('btn-add-calendar-event').addEventListener('click', () => openEventModal(null));
+});
+
+async function loadEvents() {
+  const res = await window.electronAPI.dbAll('SELECT id, title, description, start_date AS event_date, event_type FROM calendar_events ORDER BY start_date');
+  allEvents = (res.success && res.data) ? res.data : [];
+}
+
+function renderCalendar() {
+  const year  = currentMonth.getFullYear();
+  const month = currentMonth.getMonth();
+  document.getElementById('calendar-month-year').textContent =
+    currentMonth.toLocaleDateString(undefined, { month:'long', year:'numeric' });
+
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month+1, 0).getDate();
+  const today = new Date().toISOString().substring(0,10);
+
+  let html = '';
+  // Blanks for first row offset
+  for (let i=0; i<firstDay; i++) html += `<div class="cal-day other-month"></div>`;
+  for (let d=1; d<=daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dayEvents = allEvents.filter(e => e.event_date === dateStr);
+    html += `<div class="cal-day${dateStr===today?' today':''}" onclick="openEventModal(null,'${dateStr}')">
+      <div class="cal-day-num">${d}</div>
+      ${dayEvents.map(e=>`<div class="cal-event" title="${e.title}">${e.title}</div>`).join('')}
+    </div>`;
+  }
+  document.getElementById('calendar-grid-body').innerHTML = html;
+}
+
+function openEventModal(existing, prefillDate='') {
+  const modal = document.getElementById('app-modal');
+  document.getElementById('app-modal-title').textContent = existing ? 'Edit Event' : 'Add Calendar Event';
+  document.getElementById('app-modal-body').innerHTML = `
+    <div class="form-group"><label class="form-label">Event Title *</label><input id="mf-etitle" class="form-control" value="${existing?.title||''}"></div>
+    <div class="form-group" style="margin-top:12px;"><label class="form-label">Date *</label><input type="date" id="mf-edate" class="form-control" value="${existing?.event_date||prefillDate}"></div>
+    <div class="form-group" style="margin-top:12px;"><label class="form-label">Type</label>
+      <select id="mf-etype" class="form-control"><option>Holiday</option><option>Exam</option><option>Event</option><option>Meeting</option><option>Other</option></select></div>
+    <div class="form-group" style="margin-top:12px;"><label class="form-label">Description</label><textarea id="mf-edesc" class="form-control" rows="3">${existing?.description||''}</textarea></div>`;
+  document.getElementById('app-modal-footer').innerHTML=`<button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="_ev-save">Save Event</button>`;
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick=()=>modal.classList.remove('active');
+  document.getElementById('app-modal-close-btn').onclick=()=>modal.classList.remove('active');
+  document.getElementById('_ev-save').onclick=async()=>{
+    const title=document.getElementById('mf-etitle').value.trim();
+    const date=document.getElementById('mf-edate').value;
+    if(!title||!date){showToast('Title and date are required.','danger');return;}
+    if(existing) await window.electronAPI.dbRun('UPDATE calendar_events SET title=?,start_date=?,end_date=?,event_type=?,description=? WHERE id='+existing.id,[title,date,date,document.getElementById('mf-etype').value,document.getElementById('mf-edesc').value]);
+    else await window.electronAPI.dbRun('INSERT INTO calendar_events(title,start_date,end_date,event_type,description) VALUES(?,?,?,?,?)',[title,date,date,document.getElementById('mf-etype').value,document.getElementById('mf-edesc').value]);
+    showToast('Event saved.','success');
+    modal.classList.remove('active');
+    await loadEvents(); renderCalendar();
+  };
+}
+</script>
+</body>
+</html>

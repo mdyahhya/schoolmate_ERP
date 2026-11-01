@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Staff Management — School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="app-container">
+  <aside class="sidebar" id="sidebar-container"></aside>
+  <main class="main-layout">
+    <header class="header" id="header-container"></header>
+    <div class="content-viewport">
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">Support &amp; Office Staff Directory</h3>
+          <button class="btn btn-primary" id="btn-add-staff"><span data-icon="plus"></span> Add Staff Member</button>
+        </div>
+        <div class="card-body">
+          <div class="search-filter-bar">
+            <div class="search-input-wrapper">
+              <span data-icon="search"></span>
+              <input type="text" id="staff-search" class="form-control" placeholder="Search by Employee ID, Name, Role…">
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table" id="staff-table">
+              <thead><tr><th>Employee ID</th><th>Full Name</th><th>Role</th><th>Department</th><th>Contact No</th><th>Joining Date</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody><tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-content" id="app-modal-content">
+    <div class="modal-header"><h3 class="modal-title" id="app-modal-title">Staff</h3><button class="modal-close" id="app-modal-close-btn"></button></div>
+    <div class="modal-body" id="app-modal-body"></div>
+    <div class="modal-footer" id="app-modal-footer"><button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="app-modal-submit">Save</button></div>
+  </div>
+</div>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+let allStaff = [];
+document.addEventListener('DOMContentLoaded', () => {
+  loadStaff();
+  document.getElementById('btn-add-staff').addEventListener('click', () => openModal(null));
+  document.getElementById('staff-search').addEventListener('input', () => {
+    const q = document.getElementById('staff-search').value.toLowerCase();
+    renderTable(q ? allStaff.filter(r => r.full_name.toLowerCase().includes(q)||(r.employee_id||'').toLowerCase().includes(q)||(r.role||'').toLowerCase().includes(q)) : allStaff);
+  });
+});
+async function loadStaff() {
+  const res = await window.electronAPI.dbAll('SELECT * FROM staff_mpa ORDER BY full_name ASC');
+  allStaff = (res.success && res.data) ? res.data : [];
+  renderTable(allStaff);
+}
+function renderTable(data) {
+  const tbody = document.querySelector('#staff-table tbody');
+  if (!data.length) { tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">No staff records found.</td></tr>'; return; }
+  tbody.innerHTML = data.map(r => `<tr>
+    <td>${r.employee_id||'—'}</td><td><strong>${r.full_name}</strong></td><td>${r.role||'—'}</td>
+    <td>${r.department||'—'}</td><td>${r.contact_phone||'—'}</td><td>${r.joining_date||'—'}</td>
+    <td><span class="badge badge-${r.status==='Active'?'success':'warning'}">${r.status||'Active'}</span></td>
+    <td>
+      <button class="icon-btn" onclick="editStaff(${r.id})"><span data-icon="edit"></span></button>
+      <button class="icon-btn" onclick="deleteStaff(${r.id})"><span data-icon="delete"></span></button>
+    </td></tr>`).join('');
+  document.querySelectorAll('[data-icon]').forEach(el=>{const n=el.getAttribute('data-icon');if(icons[n])el.innerHTML=icons[n];});
+}
+function openModal(existing) {
+  const modal = document.getElementById('app-modal');
+  document.getElementById('app-modal-title').textContent = existing ? 'Edit Staff' : 'Add Staff Member';
+  document.getElementById('app-modal-body').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Full Name *</label><input id="mf-name" class="form-control" value="${existing?.full_name||''}" required></div>
+      <div class="form-group"><label class="form-label">Employee ID</label><input id="mf-eid" class="form-control" value="${existing?.employee_id||''}"></div>
+      <div class="form-group"><label class="form-label">Role / Designation</label><input id="mf-role" class="form-control" value="${existing?.role||''}"></div>
+      <div class="form-group"><label class="form-label">Department</label><input id="mf-dept" class="form-control" value="${existing?.department||''}"></div>
+      <div class="form-group"><label class="form-label">Contact Phone</label><input id="mf-phone" class="form-control" value="${existing?.contact_phone||''}"></div>
+      <div class="form-group"><label class="form-label">Joining Date</label><input type="date" id="mf-join" class="form-control" value="${existing?.joining_date||''}"></div>
+      <div class="form-group"><label class="form-label">Status</label><select id="mf-status" class="form-control"><option ${existing?.status==='Active'||!existing?'selected':''}>Active</option><option ${existing?.status==='Inactive'?'selected':''}>Inactive</option></select></div>
+    </div>`;
+  document.getElementById('app-modal-footer').innerHTML = `<button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="_stf-save">Save Staff</button>`;
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick = () => modal.classList.remove('active');
+  document.getElementById('app-modal-close-btn').onclick = () => modal.classList.remove('active');
+  document.getElementById('_stf-save').onclick = async () => {
+    const name = document.getElementById('mf-name').value.trim();
+    if (!name) { showToast('Name is required.','danger'); return; }
+    const p = [name,document.getElementById('mf-eid').value.trim(),document.getElementById('mf-role').value.trim(),
+      document.getElementById('mf-dept').value.trim(),document.getElementById('mf-phone').value.trim(),
+      document.getElementById('mf-join').value,document.getElementById('mf-status').value];
+    if (existing) {
+      await window.electronAPI.dbRun('UPDATE staff SET full_name=?,employee_id=?,role=?,department=?,contact_number=?,joining_date=?,status=? WHERE id='+existing.id, p);
+      showToast('Staff updated.','success');
+    } else {
+      await window.electronAPI.dbRun('INSERT INTO staff(full_name,employee_id,role,department,contact_number,joining_date,status) VALUES(?,?,?,?,?,?,?)', p);
+      showToast('Staff member added.','success');
+    }
+    modal.classList.remove('active');
+    loadStaff();
+  };
+}
+async function editStaff(id) {
+  const res = await window.electronAPI.dbGet('SELECT * FROM staff_mpa WHERE id=?',[id]);
+  if (res.success && res.data) openModal(res.data);
+}
+function deleteStaff(id) {
+  showConfirmDialog('Delete this staff record?', async () => {
+    await window.electronAPI.dbRun('DELETE FROM staff WHERE id=?',[id]);
+    showToast('Staff deleted.','info');
+    loadStaff();
+  });
+}
+</script>
+</body>
+</html>

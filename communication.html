@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Communication — School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="app-container">
+  <aside class="sidebar" id="sidebar-container"></aside>
+  <main class="main-layout">
+    <header class="header" id="header-container"></header>
+    <div class="content-viewport">
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">Circulars &amp; Announcements Bulletin</h3>
+          <button class="btn btn-primary" id="btn-new-notice"><span data-icon="plus"></span> Post New Notice</button>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table" id="notice-table">
+              <thead><tr><th>Publish Date</th><th>Notice Title</th><th>Body Preview</th><th>Audience</th><th>Actions</th></tr></thead>
+              <tbody><tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-content" id="app-modal-content">
+    <div class="modal-header"><h3 class="modal-title" id="app-modal-title">Notice</h3><button class="modal-close" id="app-modal-close-btn"></button></div>
+    <div class="modal-body" id="app-modal-body"></div>
+    <div class="modal-footer" id="app-modal-footer"><button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="app-modal-submit">Save</button></div>
+  </div>
+</div>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+let allNotices = [];
+document.addEventListener('DOMContentLoaded', () => {
+  loadNotices();
+  document.getElementById('btn-new-notice').addEventListener('click', () => openModal(null));
+});
+async function loadNotices() {
+  const res = await window.electronAPI.dbAll('SELECT * FROM notices ORDER BY created_at DESC');
+  allNotices = (res.success && res.data) ? res.data : [];
+  renderTable(allNotices);
+}
+function renderTable(data) {
+  const tbody = document.querySelector('#notice-table tbody');
+  if (!data.length) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">No active notice circulars found.</td></tr>'; return; }
+  tbody.innerHTML = data.map(r=>`<tr>
+    <td>${r.created_at ? r.created_at.substring(0,10) : '—'}</td>
+    <td><strong>${r.title}</strong></td>
+    <td>${(r.body||'').substring(0,80)}${(r.body||'').length>80?'…':''}</td>
+    <td><span class="badge badge-info">${r.audience||'All'}</span></td>
+    <td>
+      <button class="icon-btn" onclick="editNotice(${r.id})"><span data-icon="edit"></span></button>
+      <button class="icon-btn" onclick="deleteNotice(${r.id})"><span data-icon="delete"></span></button>
+    </td></tr>`).join('');
+  document.querySelectorAll('[data-icon]').forEach(el=>{const n=el.getAttribute('data-icon');if(icons[n])el.innerHTML=icons[n];});
+}
+function openModal(existing) {
+  const modal = document.getElementById('app-modal');
+  document.getElementById('app-modal-title').textContent = existing ? 'Edit Notice' : 'Post New Notice';
+  document.getElementById('app-modal-body').innerHTML = `
+    <div class="form-group"><label class="form-label">Notice Title *</label><input id="mf-title" class="form-control" value="${existing?.title||''}"></div>
+    <div class="form-group" style="margin-top:12px;"><label class="form-label">Audience</label>
+      <select id="mf-aud" class="form-control"><option ${existing?.audience==='All'||!existing?'selected':''}>All</option><option ${existing?.audience==='Students'?'selected':''}>Students</option><option ${existing?.audience==='Teachers'?'selected':''}>Teachers</option><option ${existing?.audience==='Parents'?'selected':''}>Parents</option></select></div>
+    <div class="form-group" style="margin-top:12px;"><label class="form-label">Notice Body</label>
+      <textarea id="mf-body" class="form-control" rows="6" style="resize:vertical;">${existing?.body||''}</textarea></div>`;
+  document.getElementById('app-modal-footer').innerHTML = `<button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="_ntc-save">Post Notice</button>`;
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick = () => modal.classList.remove('active');
+  document.getElementById('app-modal-close-btn').onclick = () => modal.classList.remove('active');
+  document.getElementById('_ntc-save').onclick = async () => {
+    const title = document.getElementById('mf-title').value.trim();
+    if (!title) { showToast('Title is required.','danger'); return; }
+    const p = [title, document.getElementById('mf-aud').value, document.getElementById('mf-body').value.trim()];
+    if (existing) { await window.electronAPI.dbRun('UPDATE notices SET title=?,audience=?,body=? WHERE id='+existing.id, p); showToast('Notice updated.','success'); }
+    else { await window.electronAPI.dbRun('INSERT INTO notices(title,audience,body) VALUES(?,?,?)', p); showToast('Notice posted.','success'); }
+    modal.classList.remove('active'); loadNotices();
+  };
+}
+async function editNotice(id) {
+  const res = await window.electronAPI.dbGet('SELECT * FROM notices WHERE id=?',[id]);
+  if (res.success && res.data) openModal(res.data);
+}
+function deleteNotice(id) {
+  showConfirmDialog('Delete this notice?', async ()=>{
+    await window.electronAPI.dbRun('DELETE FROM notices WHERE id=?',[id]);
+    showToast('Notice deleted.','info'); loadNotices();
+  });
+}
+</script>
+</body>
+</html>

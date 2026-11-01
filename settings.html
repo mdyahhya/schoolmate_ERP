@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>System Settings — School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="app-container">
+  <aside class="sidebar" id="sidebar-container"></aside>
+  <main class="main-layout">
+    <header class="header" id="header-container"></header>
+    <div class="content-viewport">
+
+      <!-- School Profile -->
+      <div class="content-card" style="margin-bottom:24px;">
+        <div class="card-header"><h3 class="card-title">School Profile Settings</h3></div>
+        <div class="card-body">
+          <form id="settings-school-form">
+            <div class="form-grid">
+              <div class="form-group"><label class="form-label" for="setting-school-name">School Name</label>
+                <input type="text" id="setting-school-name" class="form-control" required></div>
+              <div class="form-group"><label class="form-label" for="setting-school-phone">Contact Phone</label>
+                <input type="text" id="setting-school-phone" class="form-control"></div>
+              <div class="form-group"><label class="form-label" for="setting-school-email">Contact Email</label>
+                <input type="email" id="setting-school-email" class="form-control"></div>
+            </div>
+            <div class="form-group" style="margin-bottom:20px;">
+              <label class="form-label" for="setting-school-address">Address</label>
+              <input type="text" id="setting-school-address" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-primary">Save Profile</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Accent Color Picker -->
+      <div class="content-card" style="margin-bottom:24px;">
+        <div class="card-header"><h3 class="card-title">Interface Accent Color Theme</h3></div>
+        <div class="card-body">
+          <p style="margin-bottom:16px;font-size:0.9rem;color:var(--text-secondary);">
+            Choose the global highlight theme accent color for lists, buttons, focus, and menu items:
+          </p>
+          <div id="accent-selector-grid" style="display:flex;gap:16px;flex-wrap:wrap;"></div>
+        </div>
+      </div>
+
+      <!-- Language Preference Setting Card -->
+      <div class="content-card" style="margin-bottom:24px;">
+        <div class="card-header"><h3 class="card-title" data-i18n="Select Language">Language Preferences (i18n)</h3></div>
+        <div class="card-body">
+          <p style="margin-bottom:16px;font-size:0.9rem;color:var(--text-secondary);">
+            Choose your preferred software display language. All headings, buttons, and tables will instantly translate offline:
+          </p>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;" id="settings-lang-buttons">
+            <button type="button" class="btn btn-secondary" onclick="window.i18n.setLanguage('en');location.reload();">🇺🇸 English</button>
+            <button type="button" class="btn btn-secondary" onclick="window.i18n.setLanguage('hi');location.reload();">🇮🇳 हिन्दी (Hindi)</button>
+            <button type="button" class="btn btn-secondary" onclick="window.i18n.setLanguage('mr');location.reload();">🇮🇳 मराठी (Marathi)</button>
+            <button type="button" class="btn btn-secondary" onclick="window.i18n.setLanguage('kn');location.reload();">🇮🇳 ಕನ್ನಡ (Kannada)</button>
+            <button type="button" class="btn btn-secondary" onclick="window.i18n.setLanguage('ur');location.reload();">🇮🇳 اردو (Urdu)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Admin Credentials -->
+      <div class="content-card" style="margin-bottom:24px;">
+        <div class="card-header"><h3 class="card-title">Administrative Login Credentials</h3></div>
+        <div class="card-body">
+          <form id="settings-password-form">
+            <div class="form-grid">
+              <div class="form-group"><label class="form-label" for="setting-admin-username">Admin Username</label>
+                <input type="text" id="setting-admin-username" class="form-control" required></div>
+              <div class="form-group"><label class="form-label" for="setting-admin-password">New Password</label>
+                <input type="password" id="setting-admin-password" class="form-control" placeholder="Leave empty to keep current"></div>
+            </div>
+            <button type="submit" class="btn btn-primary">Update Credentials</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Backup -->
+      <div class="content-card">
+        <div class="card-header"><h3 class="card-title">Database Backup Management</h3></div>
+        <div class="card-body">
+          <div style="display:flex;gap:16px;margin-bottom:24px;">
+            <button class="btn btn-primary" id="btn-settings-backup"><span data-icon="backup"></span> Create Instant Backup</button>
+            <button class="btn btn-secondary" id="btn-settings-restore"><span data-icon="backup"></span> Restore from Backup</button>
+          </div>
+          <h4 style="margin-bottom:12px;font-size:0.95rem;">Database Action Logs</h4>
+          <div class="table-responsive">
+            <table class="table" id="settings-backups-table">
+              <thead><tr><th>Date</th><th>Filename / Path</th><th>Type</th><th>Status</th></tr></thead>
+              <tbody><tr><td colspan="4" style="text-align:center;color:var(--text-secondary);">No backup logs recorded.</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-content" id="app-modal-content">
+    <div class="modal-header"><h3 class="modal-title" id="app-modal-title">Confirm</h3><button class="modal-close" id="app-modal-close-btn"></button></div>
+    <div class="modal-body" id="app-modal-body"></div>
+    <div class="modal-footer" id="app-modal-footer"><button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="app-modal-submit">Confirm</button></div>
+  </div>
+</div>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const ACCENT_COLORS = {
+  'Dark Blue':  { color:'#1e40af', hover:'#1d4ed8', light:'#eff6ff',  glow:'rgba(30,64,175,0.15)'  },
+  'Black':      { color:'#0f172a', hover:'#020617', light:'#f1f5f9',  glow:'rgba(15,23,42,0.15)'   },
+  'Charcoal':   { color:'#334155', hover:'#1e293b', light:'#f8fafc',  glow:'rgba(51,65,85,0.15)'   },
+  'Burgundy':   { color:'#881337', hover:'#4c0519', light:'#fff1f2',  glow:'rgba(136,19,55,0.15)'  },
+  'Emerald':    { color:'#059669', hover:'#047857', light:'#ecfdf5',  glow:'rgba(5,150,105,0.15)'  },
+  'Ocean Blue': { color:'#0284c7', hover:'#0369a1', light:'#f0f9ff',  glow:'rgba(2,132,199,0.15)'  },
+  'Coral':      { color:'#f43f5e', hover:'#e11d48', light:'#fff1f2',  glow:'rgba(244,63,94,0.15)'  },
+  'Amber Gold': { color:'#b45309', hover:'#92400e', light:'#fef3c7',  glow:'rgba(180,83,9,0.15)'   },
+  'Green':      { color:'#065f46', hover:'#047857', light:'#ecfdf5',  glow:'rgba(6,95,70,0.15)'    },
+  'Purple':     { color:'#6b21a8', hover:'#7e22ce', light:'#faf5ff',  glow:'rgba(107,33,168,0.15)' },
+  'Orange':     { color:'#c2410c', hover:'#ea580c', light:'#fff7ed',  glow:'rgba(194,65,12,0.15)'  },
+  'Red':        { color:'#991b1b', hover:'#b91c1c', light:'#fef2f2',  glow:'rgba(153,27,27,0.15)'  },
+  'Teal':       { color:'#0f766e', hover:'#0d9488', light:'#f0fdfa',  glow:'rgba(15,118,110,0.15)' },
+};
+
+let currentSettings = {};
+
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadSettings();
+  buildAccentGrid();
+  setupForms();
+  document.getElementById('btn-settings-backup').addEventListener('click', doBackup);
+  document.getElementById('btn-settings-restore').addEventListener('click', doRestore);
+  loadBackupLogs();
+});
+
+async function loadSettings() {
+  const res = await window.electronAPI.dbGet('SELECT * FROM school_settings WHERE id=1');
+  if (res.success && res.data) {
+    currentSettings = res.data;
+    document.getElementById('setting-school-name').value    = res.data.school_name || '';
+    document.getElementById('setting-school-phone').value   = res.data.contact_phone || '';
+    document.getElementById('setting-school-email').value   = res.data.contact_email || '';
+    document.getElementById('setting-school-address').value = res.data.school_address || '';
+  }
+  const uRes = await window.electronAPI.dbGet('SELECT * FROM users WHERE id=1');
+  if (uRes.success && uRes.data) {
+    document.getElementById('setting-admin-username').value = uRes.data.username || '';
+  }
+}
+
+function buildAccentGrid() {
+  const grid = document.getElementById('accent-selector-grid');
+  const currentAccent = currentSettings.accent_color || 'Dark Blue';
+  grid.innerHTML = Object.entries(ACCENT_COLORS).map(([name, cfg]) => `
+    <div class="accent-swatch${name===currentAccent?' active':''}" data-accent="${name}"
+         style="cursor:pointer;padding:12px 18px;border-radius:var(--radius-md);border:2px solid ${name===currentAccent?cfg.color:'var(--border-color)'};background:${name===currentAccent?cfg.light:'var(--bg-tertiary)'};display:flex;align-items:center;gap:10px;transition:all 0.15s;"
+         onclick="selectAccent('${name}')">
+      <div style="width:20px;height:20px;border-radius:50%;background:${cfg.color};flex-shrink:0;"></div>
+      <span style="font-size:0.85rem;font-weight:500;">${name}</span>
+    </div>`).join('');
+}
+
+async function selectAccent(name) {
+  const cfg = ACCENT_COLORS[name];
+  if (!cfg) return;
+  // Apply CSS instantly
+  const root = document.documentElement;
+  root.style.setProperty('--accent-color', cfg.color);
+  root.style.setProperty('--accent-hover', cfg.hover);
+  root.style.setProperty('--accent-light', cfg.light);
+  root.style.setProperty('--accent-glow',  cfg.glow);
+  // Persist
+  await window.electronAPI.dbRun('UPDATE school_settings SET accent_color=? WHERE id=1',[name]);
+  currentSettings.accent_color = name;
+  buildAccentGrid();
+  showToast(`Theme changed to ${name}.`,'success');
+}
+
+function setupForms() {
+  document.getElementById('settings-school-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await window.electronAPI.dbRun(
+      'UPDATE school_settings SET school_name=?,contact_phone=?,contact_email=?,school_address=? WHERE id=1',
+      [document.getElementById('setting-school-name').value.trim(),
+       document.getElementById('setting-school-phone').value.trim(),
+       document.getElementById('setting-school-email').value.trim(),
+       document.getElementById('setting-school-address').value.trim()]
+    );
+    showToast('School profile saved.','success');
+  });
+
+  document.getElementById('settings-password-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('setting-admin-username').value.trim();
+    const password = document.getElementById('setting-admin-password').value;
+    if (!username) { showToast('Username required.','danger'); return; }
+    if (password) {
+      await window.electronAPI.dbRun('UPDATE users SET username=?,password_hash=? WHERE id=1',[username,password]);
+    } else {
+      await window.electronAPI.dbRun('UPDATE users SET username=? WHERE id=1',[username]);
+    }
+    // Update session storage
+    const user = JSON.parse(sessionStorage.getItem('erpUser')||'{}');
+    user.username = username;
+    sessionStorage.setItem('erpUser', JSON.stringify(user));
+    showToast('Credentials updated.','success');
+    document.getElementById('setting-admin-password').value = '';
+  });
+}
+
+async function doBackup() {
+  try {
+    const result = await window.electronAPI.backupDatabase();
+    if (result.success) {
+      showToast('Backup created: ' + result.path,'success');
+      loadBackupLogs();
+    } else {
+      showToast('Backup failed: ' + result.error,'danger');
+    }
+  } catch(err) {
+    showToast('Backup error: ' + err.message,'danger');
+  }
+}
+
+async function doRestore() {
+  showConfirmDialog('Restoring will replace all current data. Are you sure?', async () => {
+    try {
+      const result = await window.electronAPI.restoreDatabase();
+      if (result.success) showToast('Database restored successfully.','success');
+      else showToast('Restore failed: ' + result.error,'danger');
+    } catch(err) {
+      showToast('Restore error: ' + err.message,'danger');
+    }
+  });
+}
+
+async function loadBackupLogs() {
+  // Try to load from DB if backup_logs table exists
+  try {
+    const res = await window.electronAPI.dbAll('SELECT * FROM backup_logs ORDER BY created_at DESC LIMIT 20');
+    if (res.success && res.data && res.data.length > 0) {
+      const tbody = document.querySelector('#settings-backups-table tbody');
+      tbody.innerHTML = res.data.map(r=>`<tr>
+        <td>${(r.created_at||'').substring(0,10)}</td>
+        <td style="max-width:250px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${r.file_path||''}">${r.file_path||'—'}</td>
+        <td>${r.backup_type||'Manual'}</td>
+        <td><span class="badge badge-success">Success</span></td>
+      </tr>`).join('');
+    }
+  } catch(e) { /* backup_logs table might not exist */ }
+}
+</script>
+</body>
+</html>

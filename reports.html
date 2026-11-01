@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports Generator — School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="app-container">
+  <aside class="sidebar" id="sidebar-container"></aside>
+  <main class="main-layout">
+    <header class="header" id="header-container"></header>
+    <div class="content-viewport">
+      <div style="display:grid; grid-template-columns:260px 1fr; gap:24px;">
+
+        <!-- Left: Report Menu -->
+        <div class="content-card">
+          <div class="card-header"><h4 class="card-title">Reports Menu</h4></div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:10px;">
+            <button class="btn btn-secondary" style="width:100%;justify-content:flex-start;" data-report-type="students">Student Directory</button>
+            <button class="btn btn-secondary" style="width:100%;justify-content:flex-start;" data-report-type="teachers">Teacher Faculty List</button>
+            <button class="btn btn-secondary" style="width:100%;justify-content:flex-start;" data-report-type="admissions">Admissions Report</button>
+            <button class="btn btn-secondary" style="width:100%;justify-content:flex-start;" data-report-type="attendance">Attendance Summary</button>
+            <button class="btn btn-secondary" style="width:100%;justify-content:flex-start;" data-report-type="fees">Financial Fee Ledger</button>
+          </div>
+        </div>
+
+        <!-- Right: Preview -->
+        <div>
+          <div id="report-placeholder-card" style="display:flex;justify-content:center;align-items:center;min-height:350px;background:var(--card-bg);border:1px solid var(--border-color);border-radius:var(--radius-md);">
+            <p style="color:var(--text-secondary);">Select a report from the left menu to generate a preview.</p>
+          </div>
+          <div class="content-card" id="report-view-card" style="display:none;">
+            <div class="card-header">
+              <h3 class="card-title" id="report-title-header">Report Preview</h3>
+              <button class="btn btn-primary" id="btn-print-report"><span data-icon="print"></span> Print / Export PDF</button>
+            </div>
+            <div class="card-body" id="report-print-area">
+              <div style="text-align:center;margin-bottom:24px;border-bottom:2px solid var(--border-color);padding-bottom:16px;">
+                <h2 id="report-school-title" style="font-family:var(--font-header);">School Name</h2>
+                <p id="report-school-address" style="color:var(--text-secondary);">Address</p>
+                <p style="font-weight:600;font-size:1.1rem;margin-top:10px;" id="report-subheading"></p>
+              </div>
+              <div id="report-dynamic-table-container"></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-content" id="app-modal-content">
+    <div class="modal-header"><h3 class="modal-title" id="app-modal-title">Confirm</h3><button class="modal-close" id="app-modal-close-btn"></button></div>
+    <div class="modal-body" id="app-modal-body"></div>
+    <div class="modal-footer" id="app-modal-footer"><button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="app-modal-submit">OK</button></div>
+  </div>
+</div>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+let schoolSettings = {};
+document.addEventListener('DOMContentLoaded', async () => {
+  const res = await window.electronAPI.dbGet('SELECT * FROM school_settings WHERE id=1');
+  if (res.success && res.data) {
+    schoolSettings = res.data;
+    document.getElementById('report-school-title').textContent  = res.data.school_name || 'School Name';
+    document.getElementById('report-school-address').textContent = res.data.address || '';
+  }
+  document.querySelectorAll('[data-report-type]').forEach(btn => {
+    btn.addEventListener('click', () => generateReport(btn.getAttribute('data-report-type'), btn.textContent.trim()));
+  });
+  document.getElementById('btn-print-report').addEventListener('click', () => window.print());
+});
+
+async function generateReport(type, label) {
+  document.getElementById('report-subheading').textContent = label;
+  document.getElementById('report-placeholder-card').style.display = 'none';
+  document.getElementById('report-view-card').style.display = 'block';
+  document.getElementById('report-title-header').textContent = label;
+  const container = document.getElementById('report-dynamic-table-container');
+  container.innerHTML = '<p style="color:var(--text-secondary);">Loading…</p>';
+
+  let data = [], headers = [], rows = [];
+  if (type === 'students') {
+    const res = await window.electronAPI.dbAll(`SELECT s.student_id, s.full_name, c.class_name, sec.section_name, s.parent_name, s.parent_phone, s.status FROM students s LEFT JOIN classes c ON s.class_id=c.id LEFT JOIN sections sec ON s.section_id=sec.id ORDER BY s.full_name`);
+    data = res.success ? res.data : [];
+    headers = ['Student ID','Full Name','Class','Section','Parent Name','Parent Phone','Status'];
+    rows = data.map(r=>[r.student_id||'—',r.full_name,r.class_name||'—',r.section_name||'—',r.parent_name||'—',r.parent_phone||'—',r.status||'—']);
+  } else if (type === 'teachers') {
+    const res = await window.electronAPI.dbAll('SELECT employee_id, full_name, qualification, department, contact_number AS contact, status FROM teachers ORDER BY full_name');
+    data = res.success ? res.data : [];
+    headers = ['Employee ID','Full Name','Qualification','Department','Contact','Status'];
+    rows = data.map(r=>[r.employee_id||'—',r.full_name,r.qualification||'—',r.department||'—',r.contact||'—',r.status||'—']);
+  } else if (type === 'admissions') {
+    const res = await window.electronAPI.dbAll('SELECT candidate_name, parent_name, contact_phone, class_requested, status, created_at FROM admissions ORDER BY created_at DESC');
+    data = res.success ? res.data : [];
+    headers = ['Candidate Name','Parent/Guardian','Contact','Class Requested','Status','Date'];
+    rows = data.map(r=>[r.candidate_name,r.parent_name||'—',r.contact_phone||'—',r.class_requested||'—',r.status,(r.created_at||'').substring(0,10)]);
+  } else if (type === 'attendance') {
+    const res = await window.electronAPI.dbAll(`SELECT s.full_name, c.class_name, COUNT(*) AS total, SUM(CASE WHEN sa.status='Present' THEN 1 ELSE 0 END) AS present FROM student_attendance sa LEFT JOIN students s ON sa.student_id=s.id LEFT JOIN classes c ON sa.class_id=c.id GROUP BY sa.student_id ORDER BY s.full_name`);
+    data = res.success ? res.data : [];
+    headers = ['Student Name','Class','Total Days','Present','Absent','%'];
+    rows = data.map(r=>{const abs=r.total-r.present;const pct=r.total>0?((r.present/r.total)*100).toFixed(1):0;return[r.full_name,r.class_name||'—',r.total,r.present,abs,pct+'%'];});
+  } else if (type === 'fees') {
+    const res = await window.electronAPI.dbAll(`SELECT fp.*, s.full_name, ft.type_name AS fee_name FROM fee_payments fp LEFT JOIN students s ON fp.student_id=s.id LEFT JOIN fee_types ft ON fp.fee_type_id=ft.id ORDER BY fp.payment_date DESC`);
+    data = res.success ? res.data : [];
+    headers = ['Student Name','Fee Type','Amount (₹)','Date','Method','Receipt No.'];
+    rows = data.map(r=>[r.full_name||'—',r.fee_name||'—','₹'+Number(r.amount_paid||0).toLocaleString('en-IN'),r.payment_date||'—',r.payment_method||'—',r.receipt_number||'—']);
+  }
+
+  if (!rows.length) { container.innerHTML='<p style="color:var(--text-secondary);text-align:center;">No data available for this report.</p>'; return; }
+  container.innerHTML = `
+    <div class="table-responsive">
+      <table class="table" style="font-size:0.85rem;">
+        <thead><tr>${headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+        <tbody>${rows.map(row=>`<tr>${row.map(cell=>`<td>${cell}</td>`).join('')}</tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <p style="margin-top:16px;font-size:0.8rem;color:var(--text-secondary);">Total records: ${rows.length} &nbsp;|&nbsp; Generated: ${new Date().toLocaleString()}</p>`;
+}
+</script>
+</body>
+</html>

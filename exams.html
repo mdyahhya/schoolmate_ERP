@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exams &amp; Results — School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="app-container">
+  <aside class="sidebar" id="sidebar-container"></aside>
+  <main class="main-layout">
+    <header class="header" id="header-container"></header>
+    <div class="content-viewport">
+      <div style="display:grid; grid-template-columns:300px 1fr; gap:24px;">
+
+        <!-- Left: Exam List -->
+        <div>
+          <div class="content-card">
+            <div class="card-header">
+              <h4 class="card-title">Active Exams</h4>
+              <button class="icon-btn" id="btn-add-exam" title="Create Exam"><span data-icon="plus"></span></button>
+            </div>
+            <div class="card-body" style="padding:10px 0;">
+              <div id="exam-list-menu" style="display:flex;flex-direction:column;gap:4px;padding:0 8px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Marks entry -->
+        <div>
+          <div class="content-card">
+            <div class="card-header">
+              <h3 class="card-title" id="active-exam-title">Examination Results Entry</h3>
+              <div class="filter-group">
+                <select id="exam-class-filter" class="form-control" style="width:140px;"></select>
+                <select id="exam-subject-filter" class="form-control" style="width:140px;"></select>
+                <button class="btn btn-primary" id="btn-load-marks-grid">Load Registry</button>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="table-responsive" style="margin-bottom:20px;">
+                <table class="table" id="exam-marks-table">
+                  <thead><tr><th>Roll No</th><th>Student Name</th><th>Max Marks</th><th>Marks Obtained</th><th>Remarks</th></tr></thead>
+                  <tbody><tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">Select an exam from the left panel to manage marks.</td></tr></tbody>
+                </table>
+              </div>
+              <div class="form-actions" id="marks-actions" style="display:none;">
+                <button class="btn btn-primary" id="btn-save-marks">Save Marks Sheet</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-content" id="app-modal-content">
+    <div class="modal-header"><h3 class="modal-title" id="app-modal-title">Exam</h3><button class="modal-close" id="app-modal-close-btn"></button></div>
+    <div class="modal-body" id="app-modal-body"></div>
+    <div class="modal-footer" id="app-modal-footer"><button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="app-modal-submit">Save</button></div>
+  </div>
+</div>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+let allExams=[], allClasses=[], allSubjects=[], selectedExamId=null;
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const [eRes, cRes, sRes] = await Promise.all([
+    window.electronAPI.dbAll('SELECT * FROM exams ORDER BY created_at DESC'),
+    window.electronAPI.dbAll('SELECT * FROM classes ORDER BY class_name'),
+    window.electronAPI.dbAll('SELECT * FROM subjects ORDER BY subject_name')
+  ]);
+  allExams    = eRes.success ? eRes.data : [];
+  allClasses  = cRes.success ? cRes.data : [];
+  allSubjects = sRes.success ? sRes.data : [];
+  renderExamList();
+  populateFilters();
+  document.getElementById('btn-add-exam').addEventListener('click', openAddExamModal);
+  document.getElementById('btn-load-marks-grid').addEventListener('click', loadMarksGrid);
+  document.getElementById('btn-save-marks').addEventListener('click', saveMarks);
+});
+
+function renderExamList() {
+  const el = document.getElementById('exam-list-menu');
+  if (!allExams.length) { el.innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;padding:8px;">No exams created yet.</p>'; return; }
+  el.innerHTML = allExams.map(e => `
+    <button class="sidebar-item" onclick="selectExam(${e.id})" style="text-align:left;border-radius:var(--radius-sm);">
+      <span>${e.exam_name}</span>
+    </button>`).join('');
+}
+
+function populateFilters() {
+  const cSel = document.getElementById('exam-class-filter');
+  const sSel = document.getElementById('exam-subject-filter');
+  cSel.innerHTML = '<option value="">-- Class --</option>' + allClasses.map(c=>`<option value="${c.id}">${c.class_name}</option>`).join('');
+  sSel.innerHTML = '<option value="">-- Subject --</option>' + allSubjects.map(s=>`<option value="${s.id}">${s.subject_name}</option>`).join('');
+}
+
+function selectExam(id) {
+  selectedExamId = id;
+  const exam = allExams.find(e => e.id === id);
+  document.getElementById('active-exam-title').textContent = exam ? exam.exam_name : 'Examination Results Entry';
+  document.querySelectorAll('#exam-list-menu .sidebar-item').forEach(b => b.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+async function loadMarksGrid() {
+  if (!selectedExamId) { showToast('Select an exam first.','danger'); return; }
+  const classId = document.getElementById('exam-class-filter').value;
+  if (!classId) { showToast('Select a class.','danger'); return; }
+  const subjId  = document.getElementById('exam-subject-filter').value;
+  const stuRes  = await window.electronAPI.dbAll('SELECT * FROM students WHERE class_id=? AND status="Active" ORDER BY roll_number',[classId]);
+  const students = (stuRes.success && stuRes.data) ? stuRes.data : [];
+  const marksRes = await window.electronAPI.dbAll('SELECT * FROM exam_results_mpa WHERE exam_id=? AND subject_id=?',[selectedExamId, subjId||null]);
+  const existing = {};
+  if (marksRes.success && marksRes.data) marksRes.data.forEach(r => existing[r.student_id] = r);
+  const tbody = document.querySelector('#exam-marks-table tbody');
+  if (!students.length) { tbody.innerHTML='<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">No students in this class.</td></tr>'; return; }
+  tbody.innerHTML = students.map(s => `<tr>
+    <td>${s.roll_number||'—'}</td><td>${s.full_name}</td>
+    <td><input type="number" class="form-control marks-max" data-sid="${s.id}" value="${existing[s.id]?.max_marks||100}" style="width:80px;"></td>
+    <td><input type="number" class="form-control marks-obtained" data-sid="${s.id}" value="${existing[s.id]?.marks_obtained||''}" style="width:80px;" min="0"></td>
+    <td><input type="text" class="form-control marks-remarks" data-sid="${s.id}" value="${existing[s.id]?.remarks||''}" style="width:150px;"></td>
+  </tr>`).join('');
+  document.getElementById('marks-actions').style.display = 'flex';
+}
+
+async function saveMarks() {
+  const subjId = document.getElementById('exam-subject-filter').value;
+  const rows = document.querySelectorAll('.marks-obtained');
+  for (const row of rows) {
+    const sid = row.getAttribute('data-sid');
+    const obtained = row.value;
+    const maxEl = document.querySelector(`.marks-max[data-sid="${sid}"]`);
+    const remEl = document.querySelector(`.marks-remarks[data-sid="${sid}"]`);
+    await window.electronAPI.dbRun(
+      `INSERT INTO exam_results(exam_id,student_id,subject_id,max_marks,marks_obtained,remarks) VALUES(?,?,?,?,?,?)
+       ON CONFLICT(exam_id,student_id,subject_id) DO UPDATE SET max_marks=excluded.max_marks,marks_obtained=excluded.marks_obtained,remarks=excluded.remarks`,
+      [selectedExamId, sid, subjId||null, maxEl.value||100, obtained||null, remEl.value]
+    );
+  }
+  showToast('Marks sheet saved.','success');
+}
+
+function openAddExamModal() {
+  const modal = document.getElementById('app-modal');
+  document.getElementById('app-modal-title').textContent = 'Create New Exam';
+  document.getElementById('app-modal-body').innerHTML = `
+    <div class="form-group"><label class="form-label">Exam Name *</label><input id="mf-ename" class="form-control" placeholder="e.g. Mid-Term 2024"></div>
+    <div class="form-group" style="margin-top:12px;"><label class="form-label">Exam Date</label><input type="date" id="mf-edate" class="form-control"></div>
+    <div class="form-group" style="margin-top:12px;"><label class="form-label">Description</label><input id="mf-edesc" class="form-control"></div>`;
+  document.getElementById('app-modal-footer').innerHTML = `<button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="_exam-save">Create Exam</button>`;
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick = () => modal.classList.remove('active');
+  document.getElementById('app-modal-close-btn').onclick = () => modal.classList.remove('active');
+  document.getElementById('_exam-save').onclick = async () => {
+    const name = document.getElementById('mf-ename').value.trim();
+    if (!name) { showToast('Exam name required.','danger'); return; }
+    await window.electronAPI.dbRun('INSERT INTO exams(exam_name,start_date,end_date,academic_year) VALUES(?,?,?,?)',[name,document.getElementById('mf-edate').value,document.getElementById('mf-edate').value,'Current']);
+    showToast('Exam created.','success');
+    modal.classList.remove('active');
+    const eRes = await window.electronAPI.dbAll('SELECT * FROM exams ORDER BY created_at DESC');
+    allExams = eRes.success ? eRes.data : [];
+    renderExamList();
+  };
+}
+</script>
+</body>
+</html>

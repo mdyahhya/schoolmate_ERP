@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Information — School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<div class="app-container">
+  <aside class="sidebar" id="sidebar-container"></aside>
+  <main class="main-layout">
+    <header class="header" id="header-container"></header>
+    <div class="content-viewport">
+
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">Student Directory</h3>
+          <button class="btn btn-primary" id="btn-add-student">
+            <span data-icon="plus"></span> Add New Student
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="search-filter-bar">
+            <div class="search-input-wrapper">
+              <span data-icon="search"></span>
+              <input type="text" id="student-search" class="form-control" placeholder="Search by Name, ID, or Parent…">
+            </div>
+            <div class="filter-group">
+              <select id="student-filter-class" class="form-control" style="width:130px;">
+                <option value="">All Classes</option>
+              </select>
+              <select id="student-filter-section" class="form-control" style="width:130px;">
+                <option value="">All Sections</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="table" id="students-table">
+              <thead>
+                <tr>
+                  <th>Student ID</th><th>Roll No.</th><th>Full Name</th>
+                  <th>Class / Section</th><th>Parent Name</th><th>Parent Phone</th>
+                  <th>Status</th><th>Actions</th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-content" id="app-modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title" id="app-modal-title">Student</h3>
+      <button class="modal-close" id="app-modal-close-btn"></button>
+    </div>
+    <div class="modal-body" id="app-modal-body"></div>
+    <div class="modal-footer" id="app-modal-footer">
+      <button class="btn btn-secondary" id="app-modal-cancel">Cancel</button>
+      <button class="btn btn-primary" id="app-modal-submit">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+let allStudents = [], allClasses = [], allSections = [];
+
+document.addEventListener('DOMContentLoaded', async () => {
+  // Load meta
+  const [cRes, sRes] = await Promise.all([
+    window.electronAPI.dbAll('SELECT * FROM classes ORDER BY class_name ASC'),
+    window.electronAPI.dbAll('SELECT * FROM sections ORDER BY section_name ASC')
+  ]);
+  allClasses  = cRes.success ? cRes.data : [];
+  allSections = sRes.success ? sRes.data : [];
+  populateClassDropdowns();
+  await loadStudents();
+  document.getElementById('btn-add-student').addEventListener('click', () => openStudentModal(null));
+  document.getElementById('student-search').addEventListener('input', filterStudents);
+  document.getElementById('student-filter-class').addEventListener('change', filterStudents);
+  document.getElementById('student-filter-section').addEventListener('change', filterStudents);
+});
+
+function populateClassDropdowns() {
+  const fClass = document.getElementById('student-filter-class');
+  allClasses.forEach(c => fClass.innerHTML += `<option value="${c.id}">${c.class_name}</option>`);
+}
+
+async function loadStudents() {
+  const res = await window.electronAPI.dbAll(
+    `SELECT s.*, c.class_name, sec.section_name FROM students s
+     LEFT JOIN classes c ON s.class_id=c.id
+     LEFT JOIN sections sec ON s.section_id=sec.id
+     ORDER BY s.roll_number ASC`
+  );
+  allStudents = (res.success && res.data) ? res.data : [];
+  renderStudents(allStudents);
+}
+
+function renderStudents(data) {
+  const tbody = document.querySelector('#students-table tbody');
+  if (!data.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">No student records found.</td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map(r => `
+    <tr>
+      <td>${r.student_id||'—'}</td>
+      <td>${r.roll_number||'—'}</td>
+      <td><strong>${r.full_name}</strong></td>
+      <td>${r.class_name||'—'} / ${r.section_name||'—'}</td>
+      <td>${r.parent_name||'—'}</td>
+      <td>${r.parent_phone||'—'}</td>
+      <td><span class="badge badge-${r.status==='Active'?'success':'warning'}">${r.status||'Active'}</span></td>
+      <td>
+        <button class="icon-btn" title="Edit" onclick="editStudent(${r.id})"><span data-icon="edit"></span></button>
+        <button class="icon-btn" title="Delete" onclick="deleteStudent(${r.id})"><span data-icon="delete"></span></button>
+      </td>
+    </tr>`).join('');
+  document.querySelectorAll('[data-icon]').forEach(el => { const n=el.getAttribute('data-icon'); if(icons[n]) el.innerHTML=icons[n]; });
+}
+
+function filterStudents() {
+  const q  = document.getElementById('student-search').value.toLowerCase();
+  const cl = document.getElementById('student-filter-class').value;
+  const se = document.getElementById('student-filter-section').value;
+  let data = allStudents;
+  if (q)  data = data.filter(r => r.full_name.toLowerCase().includes(q) || (r.student_id||'').toLowerCase().includes(q) || (r.parent_name||'').toLowerCase().includes(q));
+  if (cl) data = data.filter(r => String(r.class_id) === cl);
+  if (se) data = data.filter(r => String(r.section_id) === se);
+  renderStudents(data);
+}
+
+function classOptions(sel='') {
+  return allClasses.map(c => `<option value="${c.id}" ${String(sel)===String(c.id)?'selected':''}>${c.class_name}</option>`).join('');
+}
+function sectionOptions(sel='') {
+  return allSections.map(s => `<option value="${s.id}" ${String(sel)===String(s.id)?'selected':''}>${s.section_name}</option>`).join('');
+}
+
+function openStudentModal(existing) {
+  const modal = document.getElementById('app-modal');
+  document.getElementById('app-modal-title').textContent = existing ? 'Edit Student' : 'Add New Student';
+  document.getElementById('app-modal-body').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Full Name *</label>
+        <input id="mf-name" class="form-control" value="${existing?.full_name||''}" required></div>
+      <div class="form-group"><label class="form-label">Student ID</label>
+        <input id="mf-sid" class="form-control" value="${existing?.student_id||''}"></div>
+      <div class="form-group"><label class="form-label">Roll Number</label>
+        <input id="mf-roll" class="form-control" value="${existing?.roll_number||''}"></div>
+      <div class="form-group"><label class="form-label">Date of Birth</label>
+        <input type="date" id="mf-dob" class="form-control" value="${existing?.date_of_birth||''}"></div>
+      <div class="form-group"><label class="form-label">Gender</label>
+        <select id="mf-gender" class="form-control">
+          <option ${existing?.gender==='Male'?'selected':''}>Male</option>
+          <option ${existing?.gender==='Female'?'selected':''}>Female</option>
+          <option ${existing?.gender==='Other'?'selected':''}>Other</option>
+        </select></div>
+      <div class="form-group"><label class="form-label">Class</label>
+        <select id="mf-class" class="form-control"><option value="">— Select —</option>${classOptions(existing?.class_id)}</select></div>
+      <div class="form-group"><label class="form-label">Section</label>
+        <select id="mf-section" class="form-control"><option value="">— Select —</option>${sectionOptions(existing?.section_id)}</select></div>
+      <div class="form-group"><label class="form-label">Status</label>
+        <select id="mf-status" class="form-control">
+          <option ${existing?.status==='Active'||!existing?'selected':''}>Active</option>
+          <option ${existing?.status==='Inactive'?'selected':''}>Inactive</option>
+          <option ${existing?.status==='Alumni'?'selected':''}>Alumni</option>
+        </select></div>
+      <div class="form-group"><label class="form-label">Parent Name</label>
+        <input id="mf-pname" class="form-control" value="${existing?.parent_name||''}"></div>
+      <div class="form-group"><label class="form-label">Parent Phone</label>
+        <input id="mf-pphone" class="form-control" value="${existing?.parent_phone||''}"></div>
+      <div class="form-group"><label class="form-label">Address</label>
+        <input id="mf-addr" class="form-control" value="${existing?.address||''}"></div>
+    </div>`;
+  document.getElementById('app-modal-footer').innerHTML = `
+    <button class="btn btn-secondary" id="app-modal-cancel">Cancel</button>
+    <button class="btn btn-primary" id="_stu-save">Save Student</button>`;
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick = () => modal.classList.remove('active');
+  document.getElementById('app-modal-close-btn').onclick = () => modal.classList.remove('active');
+  document.getElementById('_stu-save').onclick = async () => {
+    const name = document.getElementById('mf-name').value.trim();
+    if (!name) { showToast('Full name is required.','danger'); return; }
+    const params = [name, document.getElementById('mf-sid').value.trim(), document.getElementById('mf-roll').value.trim(),
+      document.getElementById('mf-dob').value, document.getElementById('mf-gender').value,
+      document.getElementById('mf-class').value || null, document.getElementById('mf-section').value || null,
+      document.getElementById('mf-status').value, document.getElementById('mf-pname').value.trim(),
+      document.getElementById('mf-pphone').value.trim(), document.getElementById('mf-addr').value.trim()];
+    if (existing) {
+      await window.electronAPI.dbRun('UPDATE students SET full_name=?,student_id=?,roll_number=?,date_of_birth=?,gender=?,class_id=?,section_id=?,status=?,parent_name=?,parent_phone=?,address=? WHERE id='+existing.id, params);
+      showToast('Student updated.','success');
+    } else {
+      await window.electronAPI.dbRun('INSERT INTO students(full_name,student_id,roll_number,date_of_birth,gender,class_id,section_id,status,parent_name,parent_phone,address) VALUES(?,?,?,?,?,?,?,?,?,?,?)', params);
+      showToast('Student added.','success');
+    }
+    modal.classList.remove('active');
+    loadStudents();
+  };
+}
+
+async function editStudent(id) {
+  const res = await window.electronAPI.dbGet('SELECT * FROM students WHERE id=?',[id]);
+  if (res.success && res.data) openStudentModal(res.data);
+}
+function deleteStudent(id) {
+  showConfirmDialog('Delete this student record permanently?', async () => {
+    await window.electronAPI.dbRun('DELETE FROM students WHERE id=?',[id]);
+    showToast('Student deleted.','info');
+    loadStudents();
+  });
+}
+</script>
+</body>
+</html>

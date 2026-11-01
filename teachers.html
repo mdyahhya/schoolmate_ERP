@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Management — School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<div class="app-container">
+  <aside class="sidebar" id="sidebar-container"></aside>
+  <main class="main-layout">
+    <header class="header" id="header-container"></header>
+    <div class="content-viewport">
+      <div class="content-card">
+        <div class="card-header">
+          <h3 class="card-title">Teacher Faculty Ledger</h3>
+          <button class="btn btn-primary" id="btn-add-teacher"><span data-icon="plus"></span> Add New Teacher</button>
+        </div>
+        <div class="card-body">
+          <div class="search-filter-bar">
+            <div class="search-input-wrapper">
+              <span data-icon="search"></span>
+              <input type="text" id="teacher-search" class="form-control" placeholder="Search by Employee ID, Name, Department…">
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table" id="teachers-table">
+              <thead><tr><th>Employee ID</th><th>Full Name</th><th>Gender</th><th>Qualification</th><th>Department</th><th>Contact No</th><th>Status</th><th>Actions</th></tr></thead>
+              <tbody><tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<div class="toast-container" id="toast-container"></div>
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-content" id="app-modal-content">
+    <div class="modal-header"><h3 class="modal-title" id="app-modal-title">Teacher</h3><button class="modal-close" id="app-modal-close-btn"></button></div>
+    <div class="modal-body" id="app-modal-body"></div>
+    <div class="modal-footer" id="app-modal-footer"><button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="app-modal-submit">Save</button></div>
+  </div>
+</div>
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+let allTeachers = [];
+document.addEventListener('DOMContentLoaded', () => {
+  loadTeachers();
+  document.getElementById('btn-add-teacher').addEventListener('click', () => openModal(null));
+  document.getElementById('teacher-search').addEventListener('input', () => {
+    const q = document.getElementById('teacher-search').value.toLowerCase();
+    renderTable(q ? allTeachers.filter(r => r.full_name.toLowerCase().includes(q) || (r.employee_id||'').toLowerCase().includes(q) || (r.department||'').toLowerCase().includes(q)) : allTeachers);
+  });
+});
+async function loadTeachers() {
+  const res = await window.electronAPI.dbAll('SELECT * FROM teachers_mpa ORDER BY full_name ASC');
+  allTeachers = (res.success && res.data) ? res.data : [];
+  renderTable(allTeachers);
+}
+function renderTable(data) {
+  const tbody = document.querySelector('#teachers-table tbody');
+  if (!data.length) { tbody.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text-secondary);">No teacher records found.</td></tr>'; return; }
+  tbody.innerHTML = data.map(r => `<tr>
+    <td>${r.employee_id||'—'}</td><td><strong>${r.full_name}</strong></td><td>${r.gender||'—'}</td>
+    <td>${r.qualification||'—'}</td><td>${r.department||'—'}</td><td>${r.contact_phone||'—'}</td>
+    <td><span class="badge badge-${r.status==='Active'?'success':'warning'}">${r.status||'Active'}</span></td>
+    <td>
+      <button class="icon-btn" onclick="editTeacher(${r.id})"><span data-icon="edit"></span></button>
+      <button class="icon-btn" onclick="deleteTeacher(${r.id})"><span data-icon="delete"></span></button>
+    </td></tr>`).join('');
+  document.querySelectorAll('[data-icon]').forEach(el=>{const n=el.getAttribute('data-icon');if(icons[n])el.innerHTML=icons[n];});
+}
+function openModal(existing) {
+  const modal = document.getElementById('app-modal');
+  document.getElementById('app-modal-title').textContent = existing ? 'Edit Teacher' : 'Add New Teacher';
+  document.getElementById('app-modal-body').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Full Name *</label><input id="mf-name" class="form-control" value="${existing?.full_name||''}" required></div>
+      <div class="form-group"><label class="form-label">Employee ID</label><input id="mf-eid" class="form-control" value="${existing?.employee_id||''}"></div>
+      <div class="form-group"><label class="form-label">Gender</label><select id="mf-gender" class="form-control"><option ${existing?.gender==='Male'?'selected':''}>Male</option><option ${existing?.gender==='Female'?'selected':''}>Female</option><option ${existing?.gender==='Other'?'selected':''}>Other</option></select></div>
+      <div class="form-group"><label class="form-label">Qualification</label><input id="mf-qual" class="form-control" value="${existing?.qualification||''}"></div>
+      <div class="form-group"><label class="form-label">Department</label><input id="mf-dept" class="form-control" value="${existing?.department||''}"></div>
+      <div class="form-group"><label class="form-label">Contact Phone</label><input id="mf-phone" class="form-control" value="${existing?.contact_phone||''}"></div>
+      <div class="form-group"><label class="form-label">Email</label><input id="mf-email" class="form-control" value="${existing?.email||''}"></div>
+      <div class="form-group"><label class="form-label">Joining Date</label><input type="date" id="mf-join" class="form-control" value="${existing?.joining_date||''}"></div>
+      <div class="form-group"><label class="form-label">Status</label><select id="mf-status" class="form-control"><option ${existing?.status==='Active'||!existing?'selected':''}>Active</option><option ${existing?.status==='Inactive'?'selected':''}>Inactive</option></select></div>
+    </div>`;
+  document.getElementById('app-modal-footer').innerHTML = `<button class="btn btn-secondary" id="app-modal-cancel">Cancel</button><button class="btn btn-primary" id="_tch-save">Save Teacher</button>`;
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick = () => modal.classList.remove('active');
+  document.getElementById('app-modal-close-btn').onclick = () => modal.classList.remove('active');
+  document.getElementById('_tch-save').onclick = async () => {
+    const name = document.getElementById('mf-name').value.trim();
+    if (!name) { showToast('Name is required.','danger'); return; }
+    const phone = document.getElementById('mf-phone').value.trim();
+    const p = [name,document.getElementById('mf-eid').value.trim(),document.getElementById('mf-gender').value,
+      document.getElementById('mf-qual').value.trim(),document.getElementById('mf-dept').value.trim(),
+      phone, document.getElementById('mf-email').value.trim(),
+      document.getElementById('mf-join').value,document.getElementById('mf-status').value];
+    if (existing) {
+      await window.electronAPI.dbRun('UPDATE teachers SET full_name=?,employee_id=?,gender=?,qualification=?,department=?,contact_number=?,email=?,joining_date=?,status=? WHERE id='+existing.id, p);
+      showToast('Teacher updated.','success');
+    } else {
+      await window.electronAPI.dbRun('INSERT INTO teachers(full_name,employee_id,gender,qualification,department,contact_number,email,joining_date,status) VALUES(?,?,?,?,?,?,?,?,?)', p);
+      showToast('Teacher added.','success');
+    }
+    modal.classList.remove('active');
+    loadTeachers();
+  };
+}
+async function editTeacher(id) {
+  const res = await window.electronAPI.dbGet('SELECT * FROM teachers_mpa WHERE id=?',[id]);
+  if (res.success && res.data) openModal(res.data);
+}
+function deleteTeacher(id) {
+  showConfirmDialog('Delete this teacher record permanently?', async () => {
+    await window.electronAPI.dbRun('DELETE FROM teachers WHERE id=?',[id]);
+    showToast('Teacher deleted.','info');
+    loadTeachers();
+  });
+}
+</script>
+</body>
+</html>

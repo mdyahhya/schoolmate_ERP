@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fees & Finance — School ERP</title>
+  <link rel="stylesheet" href="assets/css/style.css">
+  <style>
+    .badge-status {
+      display: inline-block;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .badge-paid { background: #dcfce7; color: #15803d; }
+    .badge-partial { background: #fef9c3; color: #854d0e; }
+    .badge-pending { background: #fee2e2; color: #b91c1c; }
+    .btn-notify {
+      background: #0d47a1;
+      color: white;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .btn-notify:hover { background: #1565c0; transform: translateY(-1px); }
+    .btn-notify:disabled { background: #94a3b8; cursor: not-allowed; transform: none; }
+    .btn-notify.sent { background: #16a34a; }
+
+    @keyframes pulse-green {
+      0% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7); }
+      70% { box-shadow: 0 0 0 6px rgba(22, 163, 74, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(22, 163, 74, 0); }
+    }
+    .pulse-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      background: #16a34a;
+      border-radius: 50%;
+      animation: pulse-green 1.8s infinite;
+    }
+    .sync-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 0.78rem;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+<div class="app-container">
+  <aside class="sidebar" id="sidebar-container"></aside>
+  <main class="main-layout">
+    <header class="header" id="header-container"></header>
+    <div class="content-viewport">
+      <!-- Full-Width Student Fees & Dues Section -->
+      <div class="content-card">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;padding:18px 24px;border-bottom:1px solid var(--border-color, #e2e8f0);flex-wrap:wrap;gap:12px;">
+          <div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <h3 class="card-title" style="margin:0;font-size:1.25rem;">Student Fees & Dues Register</h3>
+              <span class="sync-badge" id="sync-status-indicator">
+                <span class="pulse-dot"></span>
+                <span>Supabase Live Sync Connected</span>
+              </span>
+            </div>
+            <small style="color:var(--text-secondary, #64748b);">Real-time bidirectional synchronization with Parent Mobile Android App & Supabase Cloud</small>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="btn btn-secondary" id="btn-sync-cloud" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;" title="Refresh from Supabase Cloud">
+              <span>🔄</span> <span>Sync Cloud</span>
+            </button>
+            <button class="btn btn-primary" id="btn-record-payment" style="display:inline-flex;align-items:center;gap:8px;">
+              <span data-icon="finance"></span> 
+              <span>+ Record Fee Payment</span>
+            </button>
+          </div>
+        </div>
+        <div class="card-body" style="padding:20px 24px;">
+          <div class="search-filter-bar" style="margin-bottom:18px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+            <div class="search-input-wrapper" style="max-width:400px;width:100%;">
+              <span data-icon="search"></span>
+              <input type="text" id="finance-search" class="form-control" placeholder="Search by student name, roll number, or class…">
+            </div>
+            <div id="fee-quick-stats" style="display:flex;gap:16px;font-size:0.85rem;color:var(--text-secondary);">
+              <span>Total Fees: <strong id="stat-total" style="color:var(--text-primary);">₹0</strong></span>
+              <span>Paid: <strong id="stat-paid" style="color:#16a34a;">₹0</strong></span>
+              <span>Pending Dues: <strong id="stat-due" style="color:#dc2626;">₹0</strong></span>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table" id="finance-table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th>Student Name</th>
+                  <th>Class / Div</th>
+                  <th>Total Fee</th>
+                  <th>Paid Fee</th>
+                  <th>Remaining Fee</th>
+                  <th>Status</th>
+                  <th style="text-align:center;">Action / Reminder</th>
+                </tr>
+              </thead>
+              <tbody id="finance-table-body">
+                <tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:30px;">Loading fee ledger from Supabase Cloud…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast-container" id="toast-container"></div>
+
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-content" id="app-modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title" id="app-modal-title">Finance</h3>
+      <button class="modal-close" id="app-modal-close-btn"></button>
+    </div>
+    <div class="modal-body" id="app-modal-body"></div>
+    <div class="modal-footer" id="app-modal-footer">
+      <button class="btn btn-secondary" id="app-modal-cancel">Cancel</button>
+      <button class="btn btn-primary" id="app-modal-submit">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+const SUPABASE_CONFIG = {
+  url: 'https://jjraluhoybumzpdikark.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqcmFsdWhveWJ1bXpwZGlrYXJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIzOTMxODMsImV4cCI6MjA5Nzk2OTE4M30.N1_17ZWppfiHlyhZUjkmvoYf98_1qyiAWJ5uEihQx2M',
+  schoolId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'
+};
+
+// Fallback records if offline
+let studentFeeRecords = [
+  {
+    id: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380b22',
+    name: 'Aarav Sharma',
+    rollNo: '01',
+    className: '10',
+    section: 'A',
+    guardianName: 'Vikram Sharma',
+    guardianPhone: '+91 98765 00001',
+    totalFee: 55000,
+    paidFee: 40000,
+    remainingFee: 15000,
+    status: 'Partially Paid',
+    feeItems: []
+  },
+  {
+    id: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380b23',
+    name: 'Diya Patel',
+    rollNo: '02',
+    className: '10',
+    section: 'A',
+    guardianName: 'Ramesh Patel',
+    guardianPhone: '+91 98765 00002',
+    totalFee: 50000,
+    paidFee: 50000,
+    remainingFee: 0,
+    status: 'Paid',
+    feeItems: []
+  },
+  {
+    id: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380b24',
+    name: 'Rohan Verma',
+    rollNo: '05',
+    className: '10',
+    section: 'B',
+    guardianName: 'Sunita Verma',
+    guardianPhone: '+91 98765 00003',
+    totalFee: 45000,
+    paidFee: 15000,
+    remainingFee: 30000,
+    status: 'Pending',
+    feeItems: []
+  },
+  {
+    id: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380b25',
+    name: 'Ananya Iyer',
+    rollNo: '12',
+    className: '9',
+    section: 'A',
+    guardianName: 'Suresh Iyer',
+    guardianPhone: '+91 98765 00004',
+    totalFee: 48000,
+    paidFee: 48000,
+    remainingFee: 0,
+    status: 'Paid',
+    feeItems: []
+  },
+  {
+    id: 'b0eebc99-9c0b-4ef8-bb6d-6bb9bd380b26',
+    name: 'Kabir Singh',
+    rollNo: '18',
+    className: '8',
+    section: 'B',
+    guardianName: 'Meena Singh',
+    guardianPhone: '+91 98765 00005',
+    totalFee: 52000,
+    paidFee: 20000,
+    remainingFee: 32000,
+    status: 'Partially Paid',
+    feeItems: []
+  }
+];
+
+// Load live data from Supabase Cloud
+async function fetchSupabaseFees() {
+  const syncBadge = document.getElementById('sync-status-indicator');
+  try {
+    const headers = {
+      'apikey': SUPABASE_CONFIG.anonKey,
+      'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`
+    };
+
+    // 1. Fetch Students
+    const stuRes = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/students?school_id=eq.${SUPABASE_CONFIG.schoolId}&select=*&order=roll_number.asc`, { headers });
+    // 2. Fetch Fees
+    const feeRes = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/fees?school_id=eq.${SUPABASE_CONFIG.schoolId}&select=*`, { headers });
+
+    if (stuRes.ok && feeRes.ok) {
+      const students = await stuRes.json();
+      const fees = await feeRes.json();
+
+      if (students.length > 0) {
+        studentFeeRecords = students.map(s => {
+          const sFees = fees.filter(f => f.student_id === s.id);
+          const total = sFees.reduce((sum, f) => sum + (Number(f.amount) || 0), 0) || 50000;
+          const paid = sFees.filter(f => (f.status || '').toLowerCase() === 'paid').reduce((sum, f) => sum + (Number(f.amount) || 0), 0);
+          const remaining = Math.max(0, total - paid);
+          
+          let status = 'Pending';
+          if (remaining === 0 && paid > 0) status = 'Paid';
+          else if (paid > 0) status = 'Partially Paid';
+
+          return {
+            id: s.id,
+            name: s.full_name,
+            rollNo: s.roll_number,
+            className: s.class_name,
+            section: s.section,
+            guardianName: s.guardian_name || 'Parent',
+            guardianPhone: s.guardian_phone || '',
+            totalFee: total,
+            paidFee: paid,
+            remainingFee: remaining,
+            status: status,
+            feeItems: sFees
+          };
+        });
+      }
+
+      if (syncBadge) {
+        syncBadge.innerHTML = '<span class="pulse-dot"></span> <span>Supabase Live Sync Connected</span>';
+        syncBadge.style.color = '#166534';
+      }
+    }
+  } catch (err) {
+    console.warn('Supabase fetch failed, operating with local records:', err);
+    if (syncBadge) {
+      syncBadge.innerHTML = '<span>⚠️</span> <span>Local Cache Mode</span>';
+      syncBadge.style.color = '#b45309';
+    }
+  }
+
+  renderStudentFees(studentFeeRecords);
+  updateStats();
+}
+
+function updateStats() {
+  const total = studentFeeRecords.reduce((sum, s) => sum + s.totalFee, 0);
+  const paid = studentFeeRecords.reduce((sum, s) => sum + s.paidFee, 0);
+  const due = studentFeeRecords.reduce((sum, s) => sum + s.remainingFee, 0);
+
+  const statTotal = document.getElementById('stat-total');
+  const statPaid = document.getElementById('stat-paid');
+  const statDue = document.getElementById('stat-due');
+
+  if (statTotal) statTotal.textContent = '₹' + total.toLocaleString('en-IN');
+  if (statPaid) statPaid.textContent = '₹' + paid.toLocaleString('en-IN');
+  if (statDue) statDue.textContent = '₹' + due.toLocaleString('en-IN');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  fetchSupabaseFees();
+
+  document.getElementById('btn-record-payment').addEventListener('click', openPaymentModal);
+  
+  const syncBtn = document.getElementById('btn-sync-cloud');
+  if (syncBtn) {
+    syncBtn.addEventListener('click', async () => {
+      syncBtn.disabled = true;
+      syncBtn.innerHTML = '<span>⏳</span> <span>Syncing…</span>';
+      await fetchSupabaseFees();
+      syncBtn.disabled = false;
+      syncBtn.innerHTML = '<span>🔄</span> <span>Sync Cloud</span>';
+      if (typeof showToast === 'function') showToast('Synchronized with Supabase Cloud!', 'success');
+    });
+  }
+
+  document.getElementById('finance-search').addEventListener('input', () => {
+    const q = document.getElementById('finance-search').value.toLowerCase().trim();
+    if (!q) {
+      renderStudentFees(studentFeeRecords);
+    } else {
+      const filtered = studentFeeRecords.filter(s => 
+        (s.name || '').toLowerCase().includes(q) ||
+        (s.rollNo || '').toLowerCase().includes(q) ||
+        (s.className || '').toLowerCase().includes(q) ||
+        (s.guardianName || '').toLowerCase().includes(q)
+      );
+      renderStudentFees(filtered);
+    }
+  });
+
+  // Background cloud polling every 12 seconds to auto-reflect payments from the Android mobile app
+  setInterval(fetchSupabaseFees, 12000);
+});
+
+function renderStudentFees(data) {
+  const tbody = document.getElementById('finance-table-body');
+  if (!data || !data.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-secondary);padding:30px;">No matching student fee records found.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = data.map(s => {
+    let badgeClass = 'badge-pending';
+    if (s.status === 'Paid') badgeClass = 'badge-paid';
+    else if (s.status === 'Partially Paid') badgeClass = 'badge-partial';
+
+    const isDue = s.remainingFee > 0;
+
+    return `<tr>
+      <td>
+        <strong style="font-size:0.95rem;">${s.name}</strong><br>
+        <small style="color:var(--text-secondary);">Roll No: ${s.rollNo} | Guardian: ${s.guardianName}</small>
+      </td>
+      <td><strong>${s.className} - ${s.section}</strong></td>
+      <td><strong>₹${s.totalFee.toLocaleString('en-IN')}</strong></td>
+      <td><span style="color:#16a34a;font-weight:600;">₹${s.paidFee.toLocaleString('en-IN')}</span></td>
+      <td><strong style="color:${isDue ? '#dc2626' : '#16a34a'};font-size:0.95rem;">₹${s.remainingFee.toLocaleString('en-IN')}</strong></td>
+      <td><span class="badge-status ${badgeClass}">${s.status}</span></td>
+      <td style="text-align:center;">
+        ${isDue ? `
+          <button class="btn-notify" id="btn-notify-${s.rollNo}" onclick="sendFeeReminder('${s.id}', '${s.name}', '${s.className}', '${s.section}', '${s.rollNo}', ${s.remainingFee}, '${s.guardianName}')">
+            <span>🔔</span> <span>Send Reminder</span>
+          </button>
+        ` : `
+          <span style="color:#16a34a;font-size:0.85rem;font-weight:600;">✓ Fully Paid</span>
+        `}
+      </td>
+    </tr>`;
+  }).join('');
+
+  if (window.icons) {
+    document.querySelectorAll('[data-icon]').forEach(el => {
+      const n = el.getAttribute('data-icon');
+      if (icons[n]) el.innerHTML = icons[n];
+    });
+  }
+}
+
+async function sendFeeReminder(studentId, studentName, className, section, rollNo, remainingFee, guardianName) {
+  const btn = document.getElementById(`btn-notify-${rollNo}`);
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span>⏳</span> <span>Sending…</span>';
+  }
+
+  try {
+    const payload = {
+      school_id: SUPABASE_CONFIG.schoolId,
+      title: `💳 Term Fee Reminder - ${studentName}`,
+      content: `Dear Parent (${guardianName}), your remaining fee balance of ₹${remainingFee.toLocaleString('en-IN')} for ${studentName} (Class ${className}-${section}, Roll ${rollNo}) is due. Please check the Fees section in your app.`,
+      category: 'Fees',
+      target_role: 'parent',
+      attachment_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=600&q=80'
+    };
+
+    const response = await fetch(`${SUPABASE_CONFIG.url}/rest/v1/notices`, {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'return=minimal'
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      throw new Error(`Server returned status ${response.status}`);
+    }
+
+    if (btn) {
+      btn.classList.add('sent');
+      btn.innerHTML = '<span>✓</span> <span>Sent to App!</span>';
+    }
+
+    if (typeof showToast === 'function') {
+      showToast(`🔔 Fee Reminder sent to ${studentName}'s parent mobile app!`, 'success');
+    } else {
+      alert(`🔔 Fee Reminder sent to ${studentName}'s parent mobile app!`);
+    }
+  } catch (err) {
+    console.error('Failed to send notification:', err);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>🔔</span> <span>Send Reminder</span>';
+    }
+    if (typeof showToast === 'function') {
+      showToast('Failed to send reminder: ' + err.message, 'danger');
+    } else {
+      alert('Failed to send reminder: ' + err.message);
+    }
+  }
+}
+
+function openPaymentModal() {
+  const modal = document.getElementById('app-modal');
+  document.getElementById('app-modal-title').textContent = 'Record Fee Payment';
+  document.getElementById('app-modal-body').innerHTML = `
+    <div class="form-grid">
+      <div class="form-group" style="grid-column:1/-1;">
+        <label class="form-label">Student *</label>
+        <select id="mf-student" class="form-control">
+          <option value="">— Select Student —</option>
+          ${studentFeeRecords.map(s => `<option value="${s.id}">${s.name} (Class ${s.className}-${s.section}, Roll ${s.rollNo}) — Due: ₹${s.remainingFee.toLocaleString('en-IN')}</option>`).join('')}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Amount Paid (₹) *</label>
+        <input type="number" id="mf-amount" class="form-control" placeholder="e.g. 15000" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Payment Date</label>
+        <input type="date" id="mf-pdate" class="form-control" value="${new Date().toISOString().substring(0,10)}">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Payment Method</label>
+        <select id="mf-method" class="form-control">
+          <option>Cash</option>
+          <option>Online UPI</option>
+          <option>Cheque</option>
+          <option>Bank Transfer</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Receipt Number</label>
+        <input id="mf-receipt" class="form-control" placeholder="Auto-generated if blank">
+      </div>
+    </div>`;
+
+  document.getElementById('app-modal-footer').innerHTML = `
+    <button class="btn btn-secondary" id="app-modal-cancel">Cancel</button>
+    <button class="btn btn-primary" id="_pay-save">Save & Sync to Cloud</button>
+  `;
+
+  modal.classList.add('active');
+  document.getElementById('app-modal-cancel').onclick = () => modal.classList.remove('active');
+  document.getElementById('app-modal-close-btn').onclick = () => modal.classList.remove('active');
+
+  document.getElementById('_pay-save').onclick = async () => {
+    const saveBtn = document.getElementById('_pay-save');
+    const sid = document.getElementById('mf-student').value;
+    const amount = Number(document.getElementById('mf-amount').value);
+    const receiptNo = document.getElementById('mf-receipt').value.trim() ||
+      `REC-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+
+    if (!sid || !amount) {
+      if (typeof showToast === 'function') showToast('Please select a student and enter amount.', 'danger');
+      return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving to Supabase…';
+
+    const rec = studentFeeRecords.find(s => s.id === sid);
+
+    try {
+      const headers = {
+        'apikey': SUPABASE_CONFIG.anonKey,
+        'Authorization': `Bearer ${SUPABASE_CONFIG.anonKey}`,
+        'Content-Type': 'application/json'
+      };
+
+      // 1. Check if an existing pending fee item exists in Supabase
+      const pendingItem = (rec && rec.feeItems) ? rec.feeItems.find(f => (f.status || '').toLowerCase() !== 'paid') : null;
+
+      if (pendingItem) {
+        await fetch(`${SUPABASE_CONFIG.url}/rest/v1/fees?id=eq.${pendingItem.id}`, {
+          method: 'PATCH',
+          headers,
+          body: JSON.stringify({
+            status: 'paid',
+            receipt_number: receiptNo
+          })
+        });
+      } else {
+        await fetch(`${SUPABASE_CONFIG.url}/rest/v1/fees`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            school_id: SUPABASE_CONFIG.schoolId,
+            student_id: sid,
+            title: 'Tuition & Academic Fee Payment',
+            amount: amount,
+            status: 'paid',
+            receipt_number: receiptNo,
+            due_date: new Date().toISOString()
+          })
+        });
+      }
+
+      // 2. Broadcast receipt notification to student's mobile app
+      await fetch(`${SUPABASE_CONFIG.url}/rest/v1/notices`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          school_id: SUPABASE_CONFIG.schoolId,
+          title: `🧾 Payment Received: ₹${amount.toLocaleString('en-IN')}`,
+          content: `Payment of ₹${amount.toLocaleString('en-IN')} has been recorded for ${rec ? rec.name : 'Student'}. Official Receipt #${receiptNo} is now available in your fees ledger.`,
+          category: 'Fees',
+          target_role: 'parent'
+        })
+      });
+
+      if (typeof showToast === 'function') {
+        showToast(`Payment of ₹${amount.toLocaleString('en-IN')} recorded & synced with Mobile App!`, 'success');
+      }
+
+      modal.classList.remove('active');
+      await fetchSupabaseFees();
+
+    } catch (err) {
+      console.error('Failed to sync payment with Supabase:', err);
+      // Fallback local update
+      if (rec) {
+        rec.paidFee += amount;
+        rec.remainingFee = Math.max(0, rec.totalFee - rec.paidFee);
+        rec.status = rec.remainingFee === 0 ? 'Paid' : 'Partially Paid';
+      }
+      modal.classList.remove('active');
+      renderStudentFees(studentFeeRecords);
+      updateStats();
+      if (typeof showToast === 'function') {
+        showToast('Payment saved locally (offline fallback mode).', 'warning');
+      }
+    }
+  };
+}
+</script>
+</body>
+</html>

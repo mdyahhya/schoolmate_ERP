@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — School ERP</title>
+  <meta name="description" content="School ERP administration dashboard with real-time metrics and charts.">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="node_modules/chart.js/dist/chart.umd.js"></script>
+</head>
+<body>
+
+<div class="app-container">
+  <aside class="sidebar" id="sidebar-container"></aside>
+
+  <main class="main-layout">
+    <header class="header" id="header-container"></header>
+
+    <div class="content-viewport">
+
+      <!-- STAT CARDS -->
+      <div class="card-grid">
+        <div class="stat-card">
+          <div class="stat-info">
+            <span class="stat-label" data-i18n="Total Students">Total Students</span>
+            <span class="stat-value" id="dash-student-count">0</span>
+            <span class="stat-desc" data-i18n="Enrolled in Active Batches">Enrolled in Active Batches</span>
+          </div>
+          <div class="stat-icon-wrapper" data-icon="students"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <span class="stat-label" data-i18n="Total Teachers">Total Teachers</span>
+            <span class="stat-value" id="dash-teacher-count">0</span>
+            <span class="stat-desc" data-i18n="Faculty & Advisory Staff">Faculty &amp; Advisory Staff</span>
+          </div>
+          <div class="stat-icon-wrapper" data-icon="teachers"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <span class="stat-label" data-i18n="Daily Attendance">Daily Attendance</span>
+            <span class="stat-value" id="dash-attendance-rate">0%</span>
+            <span class="stat-desc" data-i18n="Today's Present Rate">Today's Present Rate</span>
+          </div>
+          <div class="stat-icon-wrapper" data-icon="attendance"></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-info">
+            <span class="stat-label" data-i18n="Admissions (Enquiries)">Admissions (Enquiries)</span>
+            <span class="stat-value" id="dash-enquiry-count">0</span>
+            <span class="stat-desc" data-i18n="New Registrations This Month">New Registrations This Month</span>
+          </div>
+          <div class="stat-icon-wrapper" data-icon="admissions"></div>
+        </div>
+      </div>
+
+      <!-- CHARTS -->
+      <div class="content-card" style="margin-bottom:24px;">
+        <div class="card-header">
+          <h3 class="card-title" data-i18n="Administrative Metrics Overview">Administrative Metrics Overview</h3>
+          <div class="filter-group">
+            <button class="btn btn-secondary btn-sm" id="btn-refresh-dash" data-i18n="Refresh Data">Refresh Data</button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:30px;">
+            <div>
+              <h4 style="margin-bottom:12px;" data-i18n="Fee Collection Summary">Fee Collection Summary</h4>
+              <div class="chart-container"><canvas id="chart-fees"></canvas></div>
+            </div>
+            <div>
+              <h4 style="margin-bottom:12px;" data-i18n="Monthly Admission Trends">Monthly Admission Trends</h4>
+              <div class="chart-container"><canvas id="chart-admissions"></canvas></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RECENT ACTIVITY -->
+      <div class="content-card">
+        <div class="card-header"><h3 class="card-title" data-i18n="Recent Admissions">Recent Admissions</h3></div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table" id="dash-recent-table">
+              <thead>
+                <tr>
+                  <th data-i18n="Candidate Name">Candidate Name</th>
+                  <th data-i18n="Class Requested">Class Requested</th>
+                  <th data-i18n="Contact">Contact</th>
+                  <th data-i18n="Status">Status</th>
+                  <th data-i18n="Date">Date</th>
+                </tr>
+              </thead>
+              <tbody><tr><td colspan="5" style="text-align:center;color:var(--text-secondary);" data-i18n="Loading…">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.content-viewport -->
+  </main>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<!-- Shared Modal -->
+<div class="modal-overlay" id="app-modal">
+  <div class="modal-content" id="app-modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title" id="app-modal-title" data-i18n="Confirm">Confirm</h3>
+      <button class="modal-close" id="app-modal-close-btn"></button>
+    </div>
+    <div class="modal-body" id="app-modal-body"></div>
+    <div class="modal-footer" id="app-modal-footer">
+      <button class="btn btn-secondary" id="app-modal-cancel" data-i18n="Cancel">Cancel</button>
+      <button class="btn btn-primary" id="app-modal-submit" data-i18n="Confirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<script src="assets/js/icons.js"></script>
+<script src="assets/js/i18n.js"></script>
+<script src="assets/js/shell.js"></script>
+<script>
+/* ---- DASHBOARD MODULE ---- */
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadDashboard();
+  document.getElementById('btn-refresh-dash').addEventListener('click', loadDashboard);
+  window.addEventListener('languageChanged', () => {
+    loadDashboard();
+  });
+});
+
+let feesChart, admissionsChart;
+
+async function loadDashboard() {
+  try {
+    // Stat counts
+    const [stuRes, tchRes, attRes, enqRes] = await Promise.all([
+      window.electronAPI.dbGet('SELECT COUNT(*) AS cnt FROM students WHERE status="Active"'),
+      window.electronAPI.dbGet('SELECT COUNT(*) AS cnt FROM teachers WHERE status="Active"'),
+      window.electronAPI.dbGet(`SELECT ROUND(AVG(CASE WHEN status="Present" THEN 1.0 ELSE 0.0 END)*100,1) AS rate FROM student_attendance WHERE date=date('now')`),
+      window.electronAPI.dbGet(`SELECT COUNT(*) AS cnt FROM admissions WHERE strftime('%Y-%m',created_at)=strftime('%Y-%m','now')`)
+    ]);
+
+    if (stuRes.success && stuRes.data) document.getElementById('dash-student-count').textContent = stuRes.data.cnt || 0;
+    if (tchRes.success && tchRes.data) document.getElementById('dash-teacher-count').textContent = tchRes.data.cnt || 0;
+    if (attRes.success && attRes.data) document.getElementById('dash-attendance-rate').textContent = (attRes.data.rate || 0) + '%';
+    if (enqRes.success && enqRes.data) document.getElementById('dash-enquiry-count').textContent = enqRes.data.cnt || 0;
+
+    // Charts
+    await renderFeesChart();
+    await renderAdmissionsChart();
+
+    // Recent table
+    const recRes = await window.electronAPI.dbAll(
+      'SELECT candidate_name, class_requested, contact_phone, status, created_at FROM admissions ORDER BY created_at DESC LIMIT 8'
+    );
+    const tbody = document.querySelector('#dash-recent-table tbody');
+    if (recRes.success && recRes.data && recRes.data.length > 0) {
+      tbody.innerHTML = recRes.data.map(r => `
+        <tr>
+          <td>${r.candidate_name}</td>
+          <td>${r.class_requested || '—'}</td>
+          <td>${r.contact_phone || '—'}</td>
+          <td><span class="badge badge-${r.status==='Admitted'?'success':r.status==='Pending'?'warning':'info'}">${r.status}</span></td>
+          <td>${r.created_at ? r.created_at.substring(0,10) : '—'}</td>
+        </tr>`).join('');
+    } else {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-secondary);">No recent admissions found.</td></tr>';
+    }
+  } catch(err) {
+    console.error('Dashboard load error:', err);
+  }
+}
+
+async function renderFeesChart() {
+  const res = await window.electronAPI.dbAll(
+    `SELECT strftime('%b',payment_date) AS month, SUM(amount_paid) AS total
+     FROM fee_payments GROUP BY strftime('%Y-%m',payment_date) ORDER BY payment_date DESC LIMIT 6`
+  );
+  const labels = res.success && res.data ? res.data.map(r=>r.month).reverse() : ['Jan','Feb','Mar'];
+  const data   = res.success && res.data ? res.data.map(r=>r.total||0).reverse() : [0,0,0];
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
+  const collectionsLabel = window.i18n ? window.i18n.t('Collections (₹)', 'Collections (₹)') : 'Collections (₹)';
+  const ctx    = document.getElementById('chart-fees').getContext('2d');
+  if (feesChart) feesChart.destroy();
+  feesChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels, datasets: [{ label: collectionsLabel, data, backgroundColor: accent + 'aa', borderColor: accent, borderWidth: 2, borderRadius: 6 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+  });
+}
+
+async function renderAdmissionsChart() {
+  const res = await window.electronAPI.dbAll(
+    `SELECT strftime('%b',created_at) AS month, COUNT(*) AS cnt
+     FROM admissions GROUP BY strftime('%Y-%m',created_at) ORDER BY created_at DESC LIMIT 6`
+  );
+  const labels = res.success && res.data ? res.data.map(r=>r.month).reverse() : ['Jan','Feb','Mar'];
+  const data   = res.success && res.data ? res.data.map(r=>r.cnt||0).reverse() : [0,0,0];
+  const accent = getComputedStyle(document.documentElement).getPropertyValue('--accent-color').trim();
+  const admissionsLabel = window.i18n ? window.i18n.t('Admissions', 'Admissions') : 'Admissions';
+  const ctx    = document.getElementById('chart-admissions').getContext('2d');
+  if (admissionsChart) admissionsChart.destroy();
+  admissionsChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ label: admissionsLabel, data, borderColor: accent, backgroundColor: accent + '22', fill:true, tension:0.4, pointRadius:5 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+  });
+}
+</script>
+</body>
+</html>

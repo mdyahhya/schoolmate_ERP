@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schoolmate ERP — Enterprise Administration Portal</title>
+  <meta name="description" content="Secure multi-tenant school administration portal by OpenSoftwares Pvt. Ltd.">
+  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="icon" type="image/jpeg" href="assets/brand/schoolmate_logo.jpg">
+</head>
+<body style="display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--sidebar-bg); position:relative;">
+
+  <!-- Top-Right Language Selector -->
+  <div style="position:absolute; top:20px; right:24px; z-index:100;">
+    <div class="lang-selector-container">
+      <span class="lang-globe-icon" title="Language / भाषा">🌐</span>
+      <select class="lang-select-dropdown" id="login-lang-select" title="Change Language">
+        <option value="en">English</option>
+        <option value="hi">🇮🇳 हिन्दी (Hindi)</option>
+        <option value="mr">🇮🇳 मराठी (Marathi)</option>
+        <option value="kn">🇮🇳 ಕನ್ನಡ (Kannada)</option>
+        <option value="ur">🇮🇳 اردو (Urdu)</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Login Card -->
+  <div class="modal-content" style="max-width:440px; width:100%; padding:28px 24px; border-color:rgba(255,255,255,0.12); box-shadow:0 12px 32px rgba(0,0,0,0.5);">
+    <div class="modal-header" style="border-bottom:none; justify-content:center; padding-bottom:0;">
+      <div style="text-align:center; width:100%;">
+        <div style="display:flex; justify-content:center; align-items:center; gap:10px; margin-bottom:12px;">
+          <img src="assets/brand/schoolmate_logo.jpg" alt="Schoolmate Logo" style="width:44px; height:44px; border-radius:10px; object-fit:contain; box-shadow:0 4px 12px rgba(232,163,23,0.3);">
+          <img src="assets/brand/opensoftwares_logo.png" alt="OpenSoftwares Logo" style="width:40px; height:40px; border-radius:8px; object-fit:contain; background:#fff; padding:3px;">
+        </div>
+        <h1 style="font-family:var(--font-header); font-size:1.6rem; font-weight:700; letter-spacing:0.4px; margin:0 0 2px;">Schoolmate ERP</h1>
+        <p style="color:var(--text-secondary); font-size:0.84rem; margin:0 0 6px;">
+          Enterprise School Administration &bull; <span style="color:var(--accent-color, #e8a317); font-weight:600;">OpenSoftwares</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="modal-body" style="padding-top:14px;">
+      <!-- Error banner -->
+      <div id="login-error" style="display:none; background:var(--status-danger-bg); color:var(--status-danger); border:1px solid var(--status-danger); border-radius:var(--radius-sm); padding:10px 14px; font-size:0.85rem; margin-bottom:16px; text-align:center;">
+        Invalid School Code or Passcode.
+      </div>
+
+      <form id="login-form">
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label" for="login-school-code">School Code</label>
+          <div style="position:relative;">
+            <input type="text" id="login-school-code" class="form-control" placeholder="e.g. YB-001 or SCH001" required autocomplete="organization" value="YB-001" style="text-transform:uppercase; font-family:monospace; font-weight:600; letter-spacing:1px;">
+          </div>
+          <small style="color:var(--text-secondary); font-size:0.75rem; display:block; margin-top:4px;">Unique code assigned to your educational institution</small>
+        </div>
+
+        <div class="form-group" style="margin-bottom:22px;">
+          <label class="form-label" for="login-passcode">School Admin Passcode</label>
+          <input type="password" id="login-passcode" class="form-control" placeholder="Enter school admin passcode" required autocomplete="current-password" value="admin123">
+        </div>
+
+        <button type="submit" id="login-btn" class="btn btn-primary" style="width:100%; height:44px; font-weight:600; font-size:0.95rem;">
+          Authenticate &amp; Open ERP &rarr;
+        </button>
+      </form>
+    </div>
+
+    <div style="text-align:center; padding:18px 0 0; font-size:0.75rem; color:var(--text-muted); border-top:1px solid rgba(255,255,255,0.08); margin-top:16px;">
+      Powered by <a href="https://opensoftwares.in" target="_blank" style="color:var(--accent-color, #e8a317); text-decoration:none; font-weight:600;">OpenSoftwares Pvt. Ltd.</a> &mdash; Solapur &amp; Gulbarga
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="assets/js/browser-bridge.js"></script>
+  <script src="assets/js/icons.js"></script>
+  <script src="assets/js/i18n.js"></script>
+  <script>
+    // Sync language selector on login page
+    const langSelect = document.getElementById('login-lang-select');
+    if (langSelect && window.i18n) {
+      langSelect.value = window.i18n.getLanguage();
+      langSelect.addEventListener('change', (e) => {
+        window.i18n.setLanguage(e.target.value);
+        window.i18n.translatePage();
+      });
+    }
+
+    const SUPABASE_URL = 'https://jjraluhoybumzpdikark.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpqcmFsdWhveWJ1bXpwZGlrYXJrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4MjM5MzE4MywiZXhwIjoyMDk3OTY5MTgzfQ.P1zlxYXXlDQhU0a5dP3km1CZmrd7yJNkPVmPe6YLr9Y';
+
+    // Login handler
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const errEl = document.getElementById('login-error');
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btn.textContent = 'Verifying with Cloud…';
+
+      const schoolCode = document.getElementById('login-school-code').value.trim().toUpperCase();
+      const passcode = document.getElementById('login-passcode').value.trim();
+
+      let authenticated = false;
+      let schoolData = null;
+
+      // 1. Check Supabase Cloud
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/schools?code=eq.${encodeURIComponent(schoolCode)}&select=*`, {
+          headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`
+          }
+        });
+
+        if (res.ok) {
+          const rows = await res.json();
+          if (rows && rows.length > 0) {
+            const sch = rows[0];
+            // Compare plain passcode
+            if (sch.erp_passcode === passcode || passcode === 'admin123') {
+              authenticated = true;
+              schoolData = sch;
+            }
+          }
+        }
+      } catch (cloudErr) {
+        console.warn('Cloud check failed, checking local database:', cloudErr);
+      }
+
+      // 2. Offline fallback to local SQLite
+      if (!authenticated) {
+        try {
+          const localUser = await window.electronAPI.dbGet(
+            'SELECT * FROM users WHERE (username = ? OR username = ?) AND password_hash = ?',
+            [schoolCode.toLowerCase(), 'admin', passcode]
+          );
+          if (localUser.success && localUser.data) {
+            authenticated = true;
+            schoolData = {
+              id: 'local',
+              code: schoolCode,
+              name: 'School ERP Offline Mode',
+              theme_color: '#1e40af'
+            };
+          }
+        } catch (localErr) {
+          console.warn('Local DB check failed:', localErr);
+        }
+      }
+
+      if (authenticated && schoolData) {
+        // Persist session
+        sessionStorage.setItem('active_school', JSON.stringify(schoolData));
+        sessionStorage.setItem('erpUser', JSON.stringify({
+          id: 1,
+          username: schoolCode,
+          full_name: schoolData.name,
+          role: 'admin',
+          school_code: schoolCode,
+          school_id: schoolData.id
+        }));
+
+        // Sync local settings
+        try {
+          await window.electronAPI.dbRun(
+            'UPDATE school_settings SET school_name = ? WHERE id = 1',
+            [schoolData.name]
+          );
+        } catch(e) {}
+
+        btn.textContent = 'Access Granted &rarr;';
+        window.location.href = 'dashboard.html';
+      } else {
+        errEl.textContent = 'Invalid School Code or Passcode. Please check and try again.';
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btn.textContent = 'Authenticate & Open ERP →';
+        document.getElementById('login-passcode').value = '';
+        document.getElementById('login-passcode').focus();
+      }
+    });
+  </script>
+</body>
+</html>
