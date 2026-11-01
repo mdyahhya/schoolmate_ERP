@@ -4,10 +4,9 @@
   "description": "Offline Commercial School ERP Desktop Application",
   "main": "electron/main.js",
   "scripts": {
-    "build": "node build.js",
     "start": "electron .",
-    "serve": "node local-server.js",
-    "live": "node local-server.js",
+    "serve": "node server.js",
+    "live": "node server.js",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },

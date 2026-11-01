@@ -1,6 +1,16 @@
 {
-  "installCommand": "echo 'No install needed'",
-  "buildCommand": "node build.js",
-  "outputDirectory": "dist",
-  "cleanUrls": true
+  "version": 2,
+  "cleanUrls": true,
+  "functions": {
+    "server.js": {
+      "includeFiles": "{assets/**,*.html,*.jpg,*.png,*.css,*.js}"
+    }
+  },
+  "routes": [
+    { "src": "/assets/(.*)", "dest": "/assets/$1" },
+    { "src": "/schoolmate_logo.jpg", "dest": "/assets/brand/schoolmate_logo.jpg" },
+    { "src": "/opensoftwares_logo.png", "dest": "/assets/brand/opensoftwares_logo.png" },
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/server.js" }
+  ]
 }
