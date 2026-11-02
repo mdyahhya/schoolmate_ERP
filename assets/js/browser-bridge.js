@@ -528,6 +528,18 @@
       const school = getActiveSchool();
       const schoolId = school.id;
 
+      // Handle is_dark_mode update in school_settings
+      if (s.includes('update school_settings') && s.includes('is_dark_mode')) {
+        const val = (params && params.length > 0) ? params[0] : 0;
+        localStorage.setItem('erp_theme', val === 1 ? 'dark' : 'light');
+      }
+
+      // Handle accent_color update in school_settings
+      if (s.includes('update school_settings') && s.includes('accent_color')) {
+        const val = (params && params.length > 0) ? params[0] : 'Dark Blue';
+        localStorage.setItem('erp_accent', val);
+      }
+
       // Invalidate cache for active school so next view reflects new live data
       delete cache[`profiles_${schoolId}`];
       delete cache[`students_${schoolId}`];

@@ -1,54 +1,89 @@
 /* =============================================================================
    SCHOOL ERP PRIMARY STYLESHEET (style.css)
-   Vanilla CSS Design System - Modern, High-End, Themeable Layout
+   OpenSoftwares Design System: "Paper, Ink & Midnight Cobalt"
+   Inspired by opensoftwares.in — Enterprise & Schoolmate Solutions
    ============================================================================= */
 
-/* Google Fonts Import - Outfit & Inter */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+/* Google Fonts Import: Geist, DM Sans, Geist Mono, Instrument Serif */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500;600&family=Instrument+Serif:ital@1&display=swap');
 
 :root {
-  /* OpenSoftwares Signature Warm Cream & Royal Navy Palette */
-  --bg-primary: #FAF8F5;       /* Warm cream / ivory canvas from opensoftwares.in */
-  --bg-secondary: #FFFFFF;     /* Pure crisp white for cards and surface containers */
-  --bg-tertiary: #F4EFEB;      /* Soft warm sand for subtle backgrounds, tags, hover */
-  
-  --text-primary: #0F172A;     /* Deep slate black for high contrast crisp readability */
-  --text-secondary: #475569;   /* Slate neutral for descriptions & metadata */
-  --text-muted: #8C827A;       /* Warm subtle muted text */
-  
-  --border-color: #E6DFD5;     /* Refined warm linen border (not harsh gray) */
-  --border-light: #F0EAE1;     /* Ultra soft inner dividers */
-  
-  --sidebar-bg: #F5F1EA;       /* Elegant warm ivory sidebar */
-  --sidebar-text: #475569;
-  --sidebar-active-bg: #0F2B5C; /* OpenSoftwares Deep Navy */
+  /* --------------------------------------------------------------------------
+     Core OpenSoftwares Palette (from opensoftwares.in)
+     - Paper Canvas: #F6F4EF (Warm ivory/cream)
+     - Midnight Navy: #0B1630 (Deep anchor for sidebar, providing 20-30% blue)
+     - Cobalt Blue: #1D4ED8 (Electric royal cobalt accents)
+     - Saffron: #E8A317 (OpenSoftwares gold/amber highlights)
+     - Ink: #0E0E10 (Jet black high-contrast text)
+     -------------------------------------------------------------------------- */
+  --paper: #F6F4EF;
+  --paper-2: #EFEBE3;
+  --ink: #0E0E10;
+  --ink-soft: #55555C;
+  --ink-mute: #8A8A92;
+  --midnight: #0B1630;
+  --midnight-2: #14234A;
+  --cobalt: #1D4ED8;
+  --cobalt-hover: #2563EB;
+  --cobalt-light: #EFF6FF;
+  --saffron: #E8A317;
+  --saffron-dim: rgba(232, 163, 23, 0.16);
+
+  /* Primary Theme Tokens (Default: Clean OpenSoftwares Light Canvas) */
+  --bg-primary: #F6F4EF;            /* Warm cream / paper canvas (75-80% of screen) */
+  --bg-secondary: #FFFFFF;          /* Pure crisp white for cards and surface containers */
+  --bg-tertiary: #EFEBE3;           /* Soft warm linen for badges, tags, subtle hover */
+
+  --text-primary: #0E0E10;          /* OpenSoftwares deep ink for crisp readability */
+  --text-secondary: #55555C;        /* Soft neutral for descriptions & metadata */
+  --text-muted: #8A8A92;            /* Subtle muted labels */
+
+  --border-color: #EFEBE3;          /* Refined warm linen border (not harsh gray) */
+  --border-light: #F7F5F0;          /* Gentle inner dividers */
+
+  /* Sidebar Tokens: Midnight Navy (Occupies ~22-25% of screen width) */
+  --sidebar-bg: #0B1630;            /* OpenSoftwares Signature Midnight Navy */
+  --sidebar-text: #CBD5E1;          /* Slate light for high-contrast legible nav links */
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.08);
+  --sidebar-active-bg: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
   --sidebar-active-text: #FFFFFF;
-  
+  --sidebar-active-shadow: 0 4px 14px rgba(29, 78, 216, 0.35);
+
+  /* Header Tokens */
+  --header-bg: #FFFFFF;
+  --header-border: #EFEBE3;
+
+  /* Card Tokens */
   --card-bg: #FFFFFF;
-  --card-shadow: 0 4px 20px -2px rgba(15, 43, 92, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.02);
-  --card-hover-shadow: 0 14px 32px -4px rgba(15, 43, 92, 0.12), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
-  
-  --status-success: #059669;
+  --card-shadow: 0 2px 10px rgba(14, 14, 16, 0.05);
+  --card-hover-shadow: 0 10px 28px -4px rgba(11, 22, 48, 0.12), 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+
+  /* Functional Status Colors */
+  --status-success: #2F8F6B;
   --status-success-bg: #ECFDF5;
   --status-warning: #D97706;
   --status-warning-bg: #FFFBEB;
-  --status-danger: #DC2626;
+  --status-danger: #C4503F;
   --status-danger-bg: #FEF2F2;
   --status-info: #0284C7;
   --status-info-bg: #F0F9FF;
+  --color-whatsapp: #25D366;
 
-  /* Accent Color Variables (OpenSoftwares Navy & Cobalt) */
-  --accent-color: #0F2B5C; /* OpenSoftwares Signature Corporate Navy */
-  --accent-hover: #1D4ED8; /* Electric Cobalt Blue */
+  /* Accent Color Variables */
+  --accent-color: #0B1630;          /* Midnight Navy */
+  --accent-hover: #1D4ED8;          /* Electric Cobalt */
   --accent-light: #EFF6FF;
-  --accent-glow: rgba(15, 43, 92, 0.18);
-  --accent-gold: #E8A317;  /* Warm Gold / Amber Accent */
-  
-  /* Font Definitions */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-header: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  
-  /* Dimensions & Transitions */
+  --accent-glow: rgba(29, 78, 216, 0.2);
+  --accent-gold: #E8A317;           /* Saffron Amber */
+
+  /* Typography */
+  --font-sans: 'Geist', 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-header: 'DM Sans', 'Geist', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --font-mono: 'Geist Mono', Consolas, monospace;
+
+  /* Dimensions & Radius */
   --sidebar-width: 260px;
   --header-height: 70px;
   --transition-speed: 0.22s;
@@ -58,45 +93,56 @@
   --radius-pill: 9999px;
 }
 
-/* Dark Mode Variable Overrides */
+/* --------------------------------------------------------------------------
+   Dark Mode Variable Overrides
+   Activated when [data-theme="dark"] is applied
+   -------------------------------------------------------------------------- */
 [data-theme="dark"] {
-  --bg-primary: #080D1A;       /* Deep Midnight Obsidian */
-  --bg-secondary: #0F172A;     /* Sleek Slate Dark */
-  --bg-tertiary: #1E293B;      /* Card / Input Dark */
-  
+  --bg-primary: #070D1B;            /* Deep Midnight Obsidian */
+  --bg-secondary: #0B1630;          /* Midnight Navy Cards */
+  --bg-tertiary: #14234A;           /* Card / Input Dark */
+
   --text-primary: #F8FAFC;
   --text-secondary: #CBD5E1;
-  --text-muted: #64748B;
-  
-  --border-color: #1E293B;
-  --border-light: #162032;
-  
-  --sidebar-bg: #0A1021;
-  --sidebar-text: #94A3B8;
-  --sidebar-active-bg: #1D4ED8;
-  --sidebar-active-text: #FFFFFF;
-  
-  --card-bg: #0F172A;
-  --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.4);
-  --card-hover-shadow: 0 14px 32px -4px rgba(0, 0, 0, 0.6);
-  
-  --status-success: #10B981;
-  --status-success-bg: rgba(16, 185, 129, 0.12);
-  --status-warning: #F59E0B;
-  --status-warning-bg: rgba(245, 158, 11, 0.12);
-  --status-danger: #EF4444;
-  --status-danger-bg: rgba(239, 68, 68, 0.12);
-  --status-info: #06B6D4;
-  --status-info-bg: rgba(6, 182, 212, 0.12);
+  --text-muted: #8A99AD;
 
-  --accent-color: #2563EB;
+  --border-color: rgba(255, 255, 255, 0.10);
+  --border-light: rgba(255, 255, 255, 0.06);
+
+  --sidebar-bg: #050A14;            /* Darkest Midnight */
+  --sidebar-text: #94A3B8;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-hover-bg: rgba(255, 255, 255, 0.06);
+  --sidebar-active-bg: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
+  --sidebar-active-text: #FFFFFF;
+  --sidebar-active-shadow: 0 4px 16px rgba(29, 78, 216, 0.5);
+
+  --header-bg: #0B1630;
+  --header-border: rgba(255, 255, 255, 0.08);
+
+  --card-bg: #0B1630;
+  --card-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45);
+  --card-hover-shadow: 0 14px 34px -4px rgba(0, 0, 0, 0.7);
+
+  --status-success: #10B981;
+  --status-success-bg: rgba(16, 185, 129, 0.14);
+  --status-warning: #F59E0B;
+  --status-warning-bg: rgba(245, 158, 11, 0.14);
+  --status-danger: #EF4444;
+  --status-danger-bg: rgba(239, 68, 68, 0.14);
+  --status-info: #06B6D4;
+  --status-info-bg: rgba(6, 182, 212, 0.14);
+
+  --accent-color: #1D4ED8;
   --accent-hover: #3B82F6;
-  --accent-light: rgba(37, 99, 235, 0.15);
-  --accent-glow: rgba(37, 99, 235, 0.3);
+  --accent-light: rgba(29, 78, 216, 0.2);
+  --accent-glow: rgba(29, 78, 216, 0.4);
   --accent-gold: #F59E0B;
 }
 
-/* Reset and Base Styles */
+/* --------------------------------------------------------------------------
+   Reset & Base Styles
+   -------------------------------------------------------------------------- */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -118,27 +164,47 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-header);
   font-weight: 600;
   color: var(--text-primary);
+  letter-spacing: -0.01em;
 }
 
-/* Custom Scrollbars */
+/* Creative editorial accent text styling (matches opensoftwares.in hero) */
+.brand-accent-serif {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 400;
+  color: var(--accent-hover);
+}
+
+a {
+  color: var(--accent-hover);
+  text-decoration: none;
+  transition: color var(--transition-speed) ease;
+}
+
+a:hover {
+  color: var(--accent-color);
+}
+
+/* Scrollbar Customization */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
-  background: var(--bg-primary);
+  background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
 }
 
-/* =============================================================================
-   LAYOUT WRAPPER & SHELL
-   ============================================================================= */
+/* Master App Container Layout */
 .app-container {
   display: flex;
   height: 100vh;
@@ -146,7 +212,9 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
 }
 
-/* LEFT SIDEBAR NAVIGATION */
+/* --------------------------------------------------------------------------
+   LEFT SIDEBAR NAVIGATION (20-30% Midnight Navy Anchor)
+   -------------------------------------------------------------------------- */
 .sidebar {
   width: var(--sidebar-width);
   background-color: var(--sidebar-bg);
@@ -155,15 +223,15 @@ h1, h2, h3, h4, h5, h6 {
   flex-shrink: 0;
   z-index: 100;
   transition: width var(--transition-speed) ease;
-  border-right: 1px solid var(--border-color);
+  border-right: 1px solid var(--sidebar-border);
 }
 
 .sidebar-header {
   height: var(--header-height);
   display: flex;
   align-items: center;
-  padding: 0 24px;
-  border-bottom: 1px solid var(--border-color);
+  padding: 0 20px;
+  border-bottom: 1px solid var(--sidebar-border);
 }
 
 .sidebar-logo {
@@ -175,15 +243,15 @@ h1, h2, h3, h4, h5, h6 {
 .sidebar-logo-icon {
   width: 32px;
   height: 32px;
-  fill: var(--accent-hover);
+  fill: var(--accent-gold);
 }
 
 .sidebar-title {
-  color: var(--text-primary);
-  font-size: 1.15rem;
+  color: #FFFFFF;
+  font-size: 1.05rem;
   font-family: var(--font-header);
   font-weight: 700;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
 }
 
 .sidebar-menu {
@@ -222,15 +290,15 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .sidebar-item:hover {
-  color: var(--text-primary);
-  background-color: var(--bg-tertiary);
+  color: #FFFFFF;
+  background-color: var(--sidebar-hover-bg);
   transform: translateX(4px);
 }
 
 .sidebar-item.active {
-  color: #FFFFFF;
-  background: linear-gradient(135deg, #0F2B5C 0%, #1D4ED8 100%);
-  box-shadow: 0 4px 14px rgba(15, 43, 92, 0.25);
+  color: var(--sidebar-active-text);
+  background: var(--sidebar-active-bg);
+  box-shadow: var(--sidebar-active-shadow);
   font-weight: 600;
 }
 
@@ -239,43 +307,53 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .sidebar-footer {
-  padding: 16px 20px;
-  border-top: 1px solid var(--border-color);
+  padding: 14px 18px;
+  border-top: 1px solid var(--sidebar-border);
   display: flex;
   align-items: center;
   gap: 12px;
+  background: rgba(0, 0, 0, 0.15);
 }
 
 .sidebar-avatar {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background-color: var(--accent-color);
-  color: #ffffff;
+  background: linear-gradient(135deg, #1D4ED8 0%, #2563EB 100%);
+  color: #FFFFFF;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 600;
-  font-size: 0.95rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 8px rgba(29, 78, 216, 0.4);
 }
 
 .sidebar-user-info {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .sidebar-username {
-  color: var(--text-primary);
+  color: #FFFFFF;
   font-size: 0.85rem;
   font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar-role {
-  color: var(--text-muted);
-  font-size: 0.75rem;
+  color: var(--accent-gold);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
 
-/* MAIN VIEW CONTAINER */
+/* --------------------------------------------------------------------------
+   MAIN VIEW CONTAINER & TOP HEADER
+   -------------------------------------------------------------------------- */
 .main-layout {
   display: flex;
   flex-direction: column;
@@ -283,19 +361,20 @@ h1, h2, h3, h4, h5, h6 {
   height: 100vh;
   overflow: hidden;
   position: relative;
+  background-color: var(--bg-primary);
 }
 
-/* TOP HEADER */
 .header {
   height: var(--header-height);
-  background-color: var(--bg-secondary);
-  border-bottom: 1px solid var(--border-color);
+  background-color: var(--header-bg);
+  border-bottom: 1px solid var(--header-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 30px;
   flex-shrink: 0;
   z-index: 90;
+  box-shadow: 0 1px 4px rgba(14, 14, 16, 0.02);
 }
 
 .header-left {
@@ -308,7 +387,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 0.85rem;
+  font-size: 0.88rem;
   color: var(--text-secondary);
 }
 
@@ -324,16 +403,18 @@ h1, h2, h3, h4, h5, h6 {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
 }
 
 .header-time {
-  font-size: 0.85rem;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
   font-weight: 500;
   color: var(--text-secondary);
   background-color: var(--bg-tertiary);
-  padding: 6px 12px;
-  border-radius: var(--radius-sm);
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-color);
 }
 
 .header-actions {
@@ -379,17 +460,19 @@ h1, h2, h3, h4, h5, h6 {
 
 #theme-toggle-btn:hover {
   transform: scale(1.08) rotate(15deg);
-  border-color: var(--accent-gold, #E8A317);
+  border-color: var(--accent-gold);
   box-shadow: 0 4px 12px rgba(232, 163, 23, 0.25);
 }
 
-/* CONTENT CONTAINER AREA WITH SMOOTH SLIDE ANIMATION */
+/* --------------------------------------------------------------------------
+   CONTENT VIEWPORT WITH SMOOTH SLIDE-IN ANIMATION
+   -------------------------------------------------------------------------- */
 .content-viewport {
   flex-grow: 1;
   padding: 30px;
   overflow-y: auto;
   position: relative;
-  animation: erpPageSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: erpPageSlideIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
 }
 
 @keyframes erpPageSlideIn {
@@ -397,19 +480,9 @@ h1, h2, h3, h4, h5, h6 {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* Dynamic Panel Transition States */
-.module-panel {
-  display: none;
-  animation: erpPageSlideIn var(--transition-speed) ease-in-out;
-}
-
-.module-panel.active {
-  display: block;
-}
-
-/* =============================================================================
+/* --------------------------------------------------------------------------
    REUSABLE UI CARD ELEMENTS
-   ============================================================================= */
+   -------------------------------------------------------------------------- */
 .card-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -426,13 +499,13 @@ h1, h2, h3, h4, h5, h6 {
   align-items: center;
   justify-content: space-between;
   box-shadow: var(--card-shadow);
-  transition: all var(--transition-speed) ease;
+  transition: all var(--transition-speed) cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-3px);
   box-shadow: var(--card-hover-shadow);
-  border-color: var(--accent-color);
+  border-color: var(--accent-hover);
 }
 
 .stat-info {
@@ -442,7 +515,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .stat-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -450,7 +523,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .stat-value {
-  font-size: 2rem;
+  font-size: 2.1rem;
   font-family: var(--font-header);
   font-weight: 700;
   color: var(--text-primary);
@@ -467,7 +540,7 @@ h1, h2, h3, h4, h5, h6 {
   height: 48px;
   border-radius: 50%;
   background-color: var(--accent-light);
-  color: var(--accent-color);
+  color: var(--accent-hover);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -475,8 +548,8 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .stat-card:hover .stat-icon-wrapper {
-  background-color: var(--accent-color);
-  color: #ffffff;
+  background-color: var(--accent-hover);
+  color: #FFFFFF;
 }
 
 .stat-icon-wrapper svg {
@@ -493,6 +566,11 @@ h1, h2, h3, h4, h5, h6 {
   box-shadow: var(--card-shadow);
   margin-bottom: 24px;
   overflow: hidden;
+  transition: box-shadow var(--transition-speed) ease;
+}
+
+.content-card:hover {
+  box-shadow: var(--card-hover-shadow);
 }
 
 .card-header {
@@ -504,17 +582,18 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .card-title {
-  font-size: 1.1rem;
-  font-weight: 600;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .card-body {
   padding: 24px;
 }
 
-/* =============================================================================
-   BUTTONS AND INTERACTIVES
-   ============================================================================= */
+/* --------------------------------------------------------------------------
+   PILL BUTTONS & INTERACTIVES (OpenSoftwares Signature)
+   -------------------------------------------------------------------------- */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -525,10 +604,11 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.88rem;
   font-weight: 600;
   border-radius: var(--radius-pill);
-  border: 1px solid transparent;
+  border: 1.5px solid transparent;
   cursor: pointer;
-  transition: all var(--transition-speed) cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all var(--transition-speed) cubic-bezier(0.22, 1, 0.36, 1);
   user-select: none;
+  text-decoration: none;
 }
 
 .btn:hover {
@@ -542,14 +622,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #0F2B5C 0%, #1D4ED8 100%);
-  color: #ffffff;
-  box-shadow: 0 4px 12px rgba(15, 43, 92, 0.2);
+  background: linear-gradient(135deg, #0B1630 0%, #1D4ED8 100%);
+  color: #FFFFFF;
+  box-shadow: 0 4px 14px rgba(11, 22, 48, 0.25);
+  border-color: transparent;
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #0A1E40 0%, #173FB5 100%);
-  box-shadow: 0 6px 18px rgba(15, 43, 92, 0.3);
+  background: linear-gradient(135deg, #14234A 0%, #2563EB 100%);
+  box-shadow: 0 8px 20px rgba(29, 78, 216, 0.35);
+  color: #FFFFFF;
 }
 
 .btn-primary:focus {
@@ -569,19 +651,25 @@ h1, h2, h3, h4, h5, h6 {
   border-color: var(--text-muted);
 }
 
+.btn-sm {
+  padding: 6px 16px;
+  font-size: 0.8rem;
+}
+
 .btn-danger {
   background-color: var(--status-danger);
-  color: #ffffff;
+  color: #FFFFFF;
+  border-color: transparent;
 }
 
 .btn-danger:hover {
-  background-color: #dc2626;
-  box-shadow: 0 4px 10px rgba(239, 68, 68, 0.15);
+  background-color: #B91C1C;
+  box-shadow: 0 4px 12px rgba(196, 80, 63, 0.3);
 }
 
-/* =============================================================================
+/* --------------------------------------------------------------------------
    TABLES & LIST RECORDS
-   ============================================================================= */
+   -------------------------------------------------------------------------- */
 .table-responsive {
   width: 100%;
   overflow-x: auto;
@@ -633,7 +721,7 @@ h1, h2, h3, h4, h5, h6 {
   padding: 4px 10px;
   font-size: 0.75rem;
   font-weight: 600;
-  border-radius: 9999px;
+  border-radius: var(--radius-pill);
 }
 
 .badge-success {
@@ -656,9 +744,9 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--status-info);
 }
 
-/* =============================================================================
-   FORMS & INPUT CONTROL
-   ============================================================================= */
+/* --------------------------------------------------------------------------
+   FORMS & INPUT CONTROLS
+   -------------------------------------------------------------------------- */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -682,7 +770,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-sans);
   font-size: 0.9rem;
   padding: 10px 14px;
-  border: 1px solid var(--border-color);
+  border: 1.5px solid var(--border-color);
   background-color: var(--bg-secondary);
   color: var(--text-primary);
   border-radius: var(--radius-sm);
@@ -692,7 +780,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .form-control:focus {
   outline: none;
-  border-color: var(--accent-color);
+  border-color: var(--accent-hover);
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
@@ -721,6 +809,7 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--bg-tertiary);
   padding: 12px 16px;
   border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
 }
 
 .search-input-wrapper {
@@ -750,16 +839,16 @@ h1, h2, h3, h4, h5, h6 {
   gap: 10px;
 }
 
-/* =============================================================================
+/* --------------------------------------------------------------------------
    CUSTOM MODALS & CONFIRM DIALOGS
-   ============================================================================= */
+   -------------------------------------------------------------------------- */
 .modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(15, 23, 42, 0.4);
+  background-color: rgba(11, 22, 48, 0.45);
   backdrop-filter: blur(4px);
   z-index: 1000;
   display: flex;
@@ -780,8 +869,8 @@ h1, h2, h3, h4, h5, h6 {
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
   width: 100%;
-  max-width: 500px;
-  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.1);
+  max-width: 540px;
+  box-shadow: 0 20px 30px -8px rgba(11, 22, 48, 0.2);
   transform: translateY(16px);
   transition: transform var(--transition-speed) ease;
 }
@@ -843,8 +932,8 @@ h1, h2, h3, h4, h5, h6 {
 .toast {
   background-color: var(--card-bg);
   color: var(--text-primary);
-  border-left: 4px solid var(--accent-color);
-  box-shadow: var(--card-shadow);
+  border-left: 4px solid var(--accent-hover);
+  box-shadow: var(--card-hover-shadow);
   padding: 16px 20px;
   border-radius: var(--radius-sm);
   display: flex;
@@ -871,11 +960,9 @@ h1, h2, h3, h4, h5, h6 {
   border-left-color: var(--status-warning);
 }
 
-/* =============================================================================
-   PAGE SPECIFIC COMPONENTS (CALENDAR, GRID, CHIPS)
-   ============================================================================= */
-
-/* Calendar Panel Grid */
+/* --------------------------------------------------------------------------
+   CALENDAR & CHARTS
+   -------------------------------------------------------------------------- */
 .calendar-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
@@ -941,53 +1028,26 @@ h1, h2, h3, h4, h5, h6 {
 
 .calendar-event-general {
   background-color: rgba(37, 99, 235, 0.1);
-  color: #2563eb;
+  color: #2563EB;
 }
 .calendar-event-holiday {
   background-color: rgba(220, 38, 38, 0.1);
-  color: #dc2626;
+  color: #DC2626;
 }
 .calendar-event-exam {
   background-color: rgba(217, 119, 6, 0.1);
-  color: #d97706;
+  color: #D97706;
 }
 
-/* =============================================================================
-   DASHBOARD STATS GRAPH SECTION & PRINT VIEW
-   ============================================================================= */
 .chart-container {
   position: relative;
   height: 300px;
   width: 100%;
 }
 
-/* Printable Overlay Rules */
-@media print {
-  body {
-    background: #ffffff;
-    color: #000000;
-  }
-  .sidebar, .header, .search-filter-bar, .form-actions, .toast-container, .modal-overlay {
-    display: none !important;
-  }
-  .main-layout {
-    height: auto !important;
-    overflow: visible !important;
-  }
-  .content-viewport {
-    padding: 0 !important;
-    overflow: visible !important;
-  }
-  .content-card {
-    border: none !important;
-    box-shadow: none !important;
-  }
-}
-
-/* =============================================================================
-   MULTI-LANGUAGE (i18n) & LANGUAGE DROPDOWN SELECTOR STYLES
-   ============================================================================= */
-
+/* --------------------------------------------------------------------------
+   MULTI-LANGUAGE (i18n) & LANGUAGE DROPDOWN
+   -------------------------------------------------------------------------- */
 .lang-selector-container {
   display: flex;
   align-items: center;
@@ -995,12 +1055,12 @@ h1, h2, h3, h4, h5, h6 {
   background-color: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   padding: 4px 10px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-pill);
   transition: all var(--transition-speed) ease;
 }
 
 .lang-selector-container:hover {
-  border-color: var(--accent-color);
+  border-color: var(--accent-hover);
   box-shadow: 0 0 0 2px var(--accent-glow);
 }
 
@@ -1028,18 +1088,15 @@ h1, h2, h3, h4, h5, h6 {
   font-size: 0.85rem;
 }
 
-/* Devanagari & Indic Font Enhancements */
+/* Indic & Urdu Language Fonts */
 [lang="hi"], [lang="mr"] {
-  font-family: 'Inter', 'Noto Sans Devanagari', 'Mangal', 'Nirmala UI', sans-serif;
+  font-family: 'DM Sans', 'Noto Sans Devanagari', 'Mangal', sans-serif;
 }
-
 [lang="kn"] {
-  font-family: 'Inter', 'Noto Sans Kannada', 'Tunga', 'Nirmala UI', sans-serif;
+  font-family: 'DM Sans', 'Noto Sans Kannada', sans-serif;
 }
-
-/* Urdu Language & Right-To-Left (RTL) Layout */
 [lang="ur"], .lang-urdu {
-  font-family: 'Inter', 'Noto Nastaliq Urdu', 'Urdu Typesetting', 'Jameel Noori Nastaleeq', 'Segoe UI', Tahoma, sans-serif;
+  font-family: 'Noto Nastaliq Urdu', 'Urdu Typesetting', sans-serif;
 }
 
 [dir="rtl"] {
@@ -1049,7 +1106,7 @@ h1, h2, h3, h4, h5, h6 {
 
 [dir="rtl"] .sidebar {
   border-right: none;
-  border-left: 1px solid var(--border-color);
+  border-left: 1px solid var(--sidebar-border);
 }
 
 [dir="rtl"] .header-left {
@@ -1074,19 +1131,10 @@ h1, h2, h3, h4, h5, h6 {
   margin-right: 0;
 }
 
-[dir="rtl"] table thead th {
+[dir="rtl"] table thead th, [dir="rtl"] table tbody td {
   text-align: right;
 }
 
-[dir="rtl"] table tbody td {
-  text-align: right;
-}
-
-[dir="rtl"] .modal-header {
+[dir="rtl"] .modal-header, [dir="rtl"] .modal-footer {
   flex-direction: row-reverse;
 }
-
-[dir="rtl"] .modal-footer {
-  flex-direction: row-reverse;
-}
-
