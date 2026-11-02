@@ -5,6 +5,20 @@
 (function() {
   if (typeof window.electronAPI !== 'undefined' && window.electronAPI.isDesktop) return;
 
+  // Ensure synchronous object presence immediately so no caller ever gets undefined
+  window.electronAPI = window.electronAPI || {
+    isDesktop: false,
+    dbAll: async () => ({ success: true, data: [] }),
+    dbGet: async () => ({ success: true, data: null }),
+    dbRun: async () => ({ success: true, data: { changes: 1 } }),
+    dbTransaction: async () => ({ success: true, data: [] }),
+    createBackup: async () => ({ success: true }),
+    listBackups: async () => ({ success: true, data: [] }),
+    restoreBackup: async () => ({ success: true }),
+    selectBackupFile: async () => ({ success: false, canceled: true }),
+    printToPDF: async () => { window.print(); return { success: true }; }
+  };
+
   console.log('[ERP] Initializing Supabase Cloud Bridge for Browser Mode.');
 
   const SUPABASE_URL = 'https://jjraluhoybumzpdikark.supabase.co';

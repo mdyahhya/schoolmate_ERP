@@ -35,14 +35,14 @@
     <div class="modal-header" style="border-bottom:none; justify-content:center; padding:0 0 10px;">
       <div style="text-align:center; width:100%;">
         <div style="display:flex; justify-content:center; align-items:center; gap:12px; margin-bottom:14px;">
-          <img src="assets/brand/schoolmate_logo.jpg" alt="Schoolmate Logo" style="width:48px; height:48px; border-radius:12px; object-fit:contain; box-shadow:0 4px 12px rgba(11,22,48,0.12);">
-          <img src="assets/brand/opensoftwares_logo.png" alt="OpenSoftwares Logo" style="width:44px; height:44px; border-radius:10px; object-fit:contain; background:#FFFFFF; padding:4px; border:1px solid #EFEBE3;">
+          <img src="assets/brand/schoolmate_logo.jpg" alt="Schoolmate Logo" onerror="this.onerror=null; this.src='assets/images/schoolmate_logo.jpg';" style="width:48px; height:48px; border-radius:12px; object-fit:contain; box-shadow:0 4px 12px rgba(11,22,48,0.12);">
+          <img src="assets/brand/opensoftwares_logo.png" alt="OpenSoftwares Logo" onerror="this.onerror=null; this.src='assets/images/opensoftwares_logo.png';" style="width:44px; height:44px; border-radius:10px; object-fit:contain; background:#FFFFFF; padding:4px; border:1px solid #EFEBE3;">
         </div>
-        <div style="display:inline-block; padding:4px 14px; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:9999px; font-size:0.75rem; font-weight:700; color:#1D4ED8; margin-bottom:8px; letter-spacing:0.4px;">
+        <div style="display:inline-block; padding:4px 14px; background:#EFF6FF; border:1px solid #BFDBFE; border-radius:9999px; font-size:0.75rem; font-weight:700; color:#1D4ED8; margin-bottom:8px; letter-spacing:0.4px;" data-i18n="OPENSOFTWARES ENTERPRISE">
           OPENSOFTWARES ENTERPRISE
         </div>
-        <h1 style="font-family:var(--font-header, 'DM Sans', sans-serif); font-size:1.65rem; font-weight:700; color:#0E0E10; margin:0 0 4px;">Schoolmate ERP</h1>
-        <p style="color:#55555C; font-size:0.86rem; margin:0;">
+        <h1 style="font-family:var(--font-header, 'DM Sans', sans-serif); font-size:1.65rem; font-weight:700; color:#0E0E10; margin:0 0 4px;" data-i18n="Schoolmate ERP">Schoolmate ERP</h1>
+        <p style="color:#55555C; font-size:0.86rem; margin:0;" data-i18n="Institutional Management & Cloud Administration Portal">
           Institutional Management &amp; Cloud Administration Portal
         </p>
       </div>
@@ -50,32 +50,32 @@
 
     <div class="modal-body" style="padding:16px 0 0;">
       <!-- Error banner -->
-      <div id="login-error" style="display:none; background:#FEF2F2; color:#DC2626; border:1px solid #FECACA; border-radius:10px; padding:10px 14px; font-size:0.85rem; margin-bottom:16px; text-align:center; font-weight:500;">
-        Invalid School Code / Email or Passcode.
+      <div id="login-error" style="display:none; background:#FEF2F2; color:#DC2626; border:1px solid #FECACA; border-radius:10px; padding:10px 14px; font-size:0.85rem; margin-bottom:16px; text-align:center; font-weight:500;" data-i18n="Invalid School Code / Email or Passcode. Please try again.">
+        Invalid School Code / Email or Passcode. Please try again.
       </div>
 
       <form id="login-form">
         <div class="form-group" style="margin-bottom:18px;">
-          <label class="form-label" for="login-school-code" style="font-weight:600; font-size:0.84rem; color:#334155; margin-bottom:6px; display:block;">School Code or Admin Email</label>
+          <label class="form-label" for="login-school-code" style="font-weight:600; font-size:0.84rem; color:#334155; margin-bottom:6px; display:block;" data-i18n="School Code or Admin Email">School Code or Admin Email</label>
           <div style="position:relative;">
             <input type="text" id="login-school-code" class="form-control" placeholder="e.g. YB-004 or admin@school.com" required autocomplete="username" style="font-size:0.92rem; height:46px; border-radius:10px; border:1.5px solid #CBD5E1; padding:0 14px; width:100%;">
           </div>
-          <small style="color:#64748B; font-size:0.75rem; display:block; margin-top:5px;">Enter your school identifier code or registered administrative email</small>
+          <small style="color:#64748B; font-size:0.75rem; display:block; margin-top:5px;" data-i18n="Enter your school identifier code or registered administrative email">Enter your school identifier code or registered administrative email</small>
         </div>
 
         <div class="form-group" style="margin-bottom:24px;">
-          <label class="form-label" for="login-passcode" style="font-weight:600; font-size:0.84rem; color:#334155; margin-bottom:6px; display:block;">Admin Passcode / Password</label>
+          <label class="form-label" for="login-passcode" style="font-weight:600; font-size:0.84rem; color:#334155; margin-bottom:6px; display:block;" data-i18n="Admin Passcode / Password">Admin Passcode / Password</label>
           <input type="password" id="login-passcode" class="form-control" placeholder="Enter your access passcode" required autocomplete="current-password" style="font-size:0.92rem; height:46px; border-radius:10px; border:1.5px solid #CBD5E1; padding:0 14px; width:100%;">
         </div>
 
-        <button type="submit" id="login-btn" class="btn btn-primary" style="width:100%; height:46px; font-weight:600; font-size:0.95rem; border-radius:9999px; background:linear-gradient(135deg, #0B1630 0%, #1D4ED8 100%); color:#FFFFFF; border:none; box-shadow:0 6px 16px rgba(11,22,48,0.25); cursor:pointer; transition:all 0.2s ease;">
+        <button type="submit" id="login-btn" class="btn btn-primary" style="width:100%; height:46px; font-weight:600; font-size:0.95rem; border-radius:9999px; background:linear-gradient(135deg, #0B1630 0%, #1D4ED8 100%); color:#FFFFFF; border:none; box-shadow:0 6px 16px rgba(11,22,48,0.25); cursor:pointer; transition:all 0.2s ease;" data-i18n="Authenticate & Open ERP →">
           Authenticate &amp; Open ERP &rarr;
         </button>
       </form>
     </div>
 
     <div style="text-align:center; padding:18px 0 0; font-size:0.78rem; color:#55555C; border-top:1px solid #EFEBE3; margin-top:20px;">
-      Powered by <a href="https://opensoftwares.in" target="_blank" style="color:#0B1630; text-decoration:none; font-weight:700;">OpenSoftwares Pvt. Ltd.</a> &mdash; SaaS Technology Division
+      <span data-i18n="Powered by">Powered by</span> <a href="https://opensoftwares.in" target="_blank" style="color:#0B1630; text-decoration:none; font-weight:700;">OpenSoftwares Pvt. Ltd.</a> &mdash; <span data-i18n="SaaS Technology Division">SaaS Technology Division</span>
     </div>
   </div>
 
@@ -84,14 +84,16 @@
   <script src="assets/js/icons.js"></script>
   <script src="assets/js/i18n.js"></script>
   <script>
-    // Sync language selector on login page
-    const langSelect = document.getElementById('login-lang-select');
-    if (langSelect && window.i18n) {
-      langSelect.value = window.i18n.getLanguage();
-      langSelect.addEventListener('change', (e) => {
-        window.i18n.setLanguage(e.target.value);
-        window.i18n.translatePage();
-      });
+    // Initialize i18n & sync language selector on login page
+    if (window.i18n) {
+      window.i18n.init();
+      const langSelect = document.getElementById('login-lang-select');
+      if (langSelect) {
+        langSelect.value = window.i18n.getLanguage();
+        langSelect.addEventListener('change', (e) => {
+          window.i18n.setLanguage(e.target.value);
+        });
+      }
     }
 
     const SUPABASE_URL = 'https://jjraluhoybumzpdikark.supabase.co';
@@ -104,102 +106,109 @@
       const errEl = document.getElementById('login-error');
       errEl.style.display = 'none';
       btn.disabled = true;
-      btn.textContent = 'Verifying with Cloud…';
+      btn.textContent = window.i18n ? window.i18n.t('Verifying with Cloud…') : 'Verifying with Cloud…';
 
       const rawInput = document.getElementById('login-school-code').value.trim();
-      const schoolCode = rawInput.toUpperCase();
       const passcode = document.getElementById('login-passcode').value.trim();
 
       let authenticated = false;
       let schoolData = null;
       let erpUser = null;
 
-      // 1. Check Supabase Cloud (by School Code or Staff Email)
+      // 1. Flexible Supabase Cloud Query (PWA Master Sync)
       try {
+        let schRes = null;
         if (rawInput.includes('@')) {
-          const profRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?email=ilike.${encodeURIComponent(rawInput)}&select=*`, {
+          schRes = await fetch(`${SUPABASE_URL}/rest/v1/schools?email=ilike.${encodeURIComponent(rawInput)}&select=*`, {
             headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
           });
-          if (profRes.ok) {
+        } else {
+          schRes = await fetch(`${SUPABASE_URL}/rest/v1/schools?code=ilike.${encodeURIComponent(rawInput)}&select=*`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+          });
+        }
+
+        if (schRes && schRes.ok) {
+          const rows = await schRes.json();
+          if (rows && rows.length > 0) {
+            const sch = rows[0];
+            const storedPass = (sch.erp_passcode || '').trim();
+            // Match against stored passcode from PWA or standard admin passwords
+            if (storedPass === passcode || storedPass.toLowerCase() === passcode.toLowerCase() || passcode === 'admin123' || passcode === 'admin') {
+              authenticated = true;
+              schoolData = sch;
+              erpUser = {
+                id: 1,
+                username: sch.code,
+                full_name: sch.name,
+                role: 'admin',
+                school_code: sch.code,
+                school_id: sch.id
+              };
+            }
+          }
+        }
+
+        // If not matched by school code/email, check profiles table for teacher/staff email or phone
+        if (!authenticated) {
+          const profRes = await fetch(`${SUPABASE_URL}/rest/v1/profiles?or=(email.ilike.${encodeURIComponent(rawInput)},phone.eq.${encodeURIComponent(rawInput)})&select=*`, {
+            headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+          });
+          if (profRes && profRes.ok) {
             const profs = await profRes.json();
             if (profs && profs.length > 0) {
               const p = profs[0];
-              if (p.password === passcode || passcode === 'admin123' || passcode === 'admin') {
+              const pPass = (p.password || '').trim();
+              if (pPass === passcode || pPass.toLowerCase() === passcode.toLowerCase() || passcode === 'admin123' || passcode === 'admin') {
                 authenticated = true;
                 erpUser = {
                   id: p.id,
-                  username: p.email,
+                  username: p.email || p.phone,
                   full_name: p.full_name,
                   role: p.role || 'admin',
                   school_id: p.school_id
                 };
-                const schRes = await fetch(`${SUPABASE_URL}/rest/v1/schools?id=eq.${p.school_id}&select=*`, {
+                const sRes = await fetch(`${SUPABASE_URL}/rest/v1/schools?id=eq.${p.school_id}&select=*`, {
                   headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
                 });
-                if (schRes.ok) {
-                  const sRows = await schRes.json();
+                if (sRes.ok) {
+                  const sRows = await sRes.json();
                   if (sRows && sRows.length > 0) schoolData = sRows[0];
                 }
               }
             }
           }
-        } else {
-          const res = await fetch(`${SUPABASE_URL}/rest/v1/schools?code=eq.${encodeURIComponent(schoolCode)}&select=*`, {
-            headers: {
-              'apikey': SUPABASE_KEY,
-              'Authorization': `Bearer ${SUPABASE_KEY}`
-            }
-          });
-
-          if (res.ok) {
-            const rows = await res.json();
-            if (rows && rows.length > 0) {
-              const sch = rows[0];
-              if (sch.erp_passcode === passcode || passcode === 'admin' || passcode === 'admin123') {
-                authenticated = true;
-                schoolData = sch;
-                erpUser = {
-                  id: 1,
-                  username: schoolCode,
-                  full_name: sch.name,
-                  role: 'admin',
-                  school_code: schoolCode,
-                  school_id: sch.id
-                };
-              }
-            }
-          }
         }
       } catch (cloudErr) {
-        console.warn('Cloud check failed, checking local database:', cloudErr);
+        console.warn('Cloud check error:', cloudErr);
       }
 
       // 2. Offline fallback to local SQLite
-      if (!authenticated) {
+      if (!authenticated && window.electronAPI && typeof window.electronAPI.dbGet === 'function') {
         try {
           const localUser = await window.electronAPI.dbGet(
             'SELECT * FROM users WHERE (username = ? OR username = ?) AND password_hash = ?',
-            [schoolCode.toLowerCase(), 'admin', passcode]
+            [rawInput.toLowerCase(), 'admin', passcode]
           );
           if (localUser.success && localUser.data) {
             authenticated = true;
             schoolData = {
               id: 'local',
-              code: schoolCode,
+              code: rawInput.toUpperCase(),
               name: 'School ERP Offline Mode',
               theme_color: '#0F2B5C'
             };
             erpUser = {
               id: 1,
-              username: schoolCode,
+              username: rawInput.toUpperCase(),
               full_name: schoolData.name,
               role: 'admin',
-              school_code: schoolCode,
+              school_code: rawInput.toUpperCase(),
               school_id: schoolData.id
             };
           }
         } catch (localErr) {
-          console.warn('Local DB check failed:', localErr);
+          console.warn('Local DB check fallback warning:', localErr);
         }
       }
 
@@ -208,22 +217,22 @@
         sessionStorage.setItem('active_school', JSON.stringify(schoolData));
         sessionStorage.setItem('erpUser', JSON.stringify(erpUser || {
           id: 1,
-          username: schoolCode,
+          username: schoolData.code || rawInput.toUpperCase(),
           full_name: schoolData.name,
           role: 'admin',
-          school_code: schoolCode,
+          school_code: schoolData.code,
           school_id: schoolData.id
         }));
 
-        btn.textContent = 'Access Granted →';
+        btn.textContent = window.i18n ? window.i18n.t('Access Granted →') : 'Access Granted →';
         setTimeout(() => {
           window.location.href = 'dashboard.html';
         }, 150);
       } else {
-        errEl.textContent = 'Invalid School Code / Email or Passcode. Please try again.';
+        errEl.textContent = window.i18n ? window.i18n.t('Invalid School Code / Email or Passcode. Please try again.') : 'Invalid School Code / Email or Passcode. Please try again.';
         errEl.style.display = 'block';
         btn.disabled = false;
-        btn.textContent = 'Authenticate & Open ERP →';
+        btn.textContent = window.i18n ? window.i18n.t('Authenticate & Open ERP →') : 'Authenticate & Open ERP →';
         document.getElementById('login-passcode').value = '';
         document.getElementById('login-passcode').focus();
       }

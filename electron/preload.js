@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  isDesktop: true,
   // Database Query Layer
   dbAll: (sql, params) => ipcRenderer.invoke('db-all', sql, params),
   dbGet: (sql, params) => ipcRenderer.invoke('db-get', sql, params),

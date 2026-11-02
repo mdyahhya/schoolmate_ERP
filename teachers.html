@@ -64,8 +64,12 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 async function loadTeachers() {
+  if (!window.electronAPI || typeof window.electronAPI.dbAll !== 'function') {
+    setTimeout(loadTeachers, 100);
+    return;
+  }
   const res = await window.electronAPI.dbAll('SELECT * FROM teachers_mpa ORDER BY full_name ASC');
-  allTeachers = (res.success && res.data) ? res.data : [];
+  allTeachers = (res && res.success && res.data) ? res.data : [];
   renderTable(allTeachers);
 }
 function renderTable(data) {
